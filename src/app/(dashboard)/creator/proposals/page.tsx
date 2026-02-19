@@ -1,9 +1,8 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 export default async function ProposalsPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const creator = await db.creator.findFirst({ where: { user: { email: session?.user?.email! } } });
   const proposals = creator ? await db.proposal.findMany({
     where: { creatorId: creator.id },

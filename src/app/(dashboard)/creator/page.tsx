@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { StatCard, AIScoreRing } from "@/components/ui";
 import Link from "next/link";
 
 export default async function CreatorDashboard() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const creator = await db.creator.findFirst({
     where: { user: { email: session?.user?.email! } },
     include: { proposals: { include: { campaign: { include: { brand: { include: { user: true } } } } } } },

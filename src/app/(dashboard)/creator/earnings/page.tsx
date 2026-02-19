@@ -1,10 +1,9 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { StatCard } from "@/components/ui";
 
 export default async function EarningsPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const creator = await db.creator.findFirst({ where: { user: { email: session?.user?.email! } } });
   const proposals = creator ? await db.proposal.findMany({
     where: { creatorId: creator.id, status: { in: ["ACCEPTED","COMPLETED"] } },

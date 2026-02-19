@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { StatCard } from "@/components/ui";
 import Link from "next/link";
 
 export default async function BrandDashboard() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const brand = await db.brand.findFirst({ where: { user: { email: session?.user?.email! } }, include: { campaigns: { include: { proposals: true } } } });
 
   const totalCampaigns = brand?.campaigns.length ?? 0;
