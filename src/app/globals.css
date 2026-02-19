@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ─── CSS Variables ─────────────────────────────────────── */
+:root {
+  --bg:          #0A0A0A;
+  --surface:     #111111;
+  --surface-2:   #1E1E1E;
+  --surface-3:   #2D2D2D;
+  --border:      #2D2D2D;
+  --border-dim:  #1E1E1E;
+  --text:        #FFFFFF;
+  --text-2:      #C7C7C7;
+  --text-3:      #808080;
+  --text-4:      #444444;
+  --accent:      #D4A843;
+  --accent-dim:  #8A6B27;
+  --green:       #22C55E;
+  --amber:       #F59E0B;
+  --red:         #EF4444;
+  --blue:        #60A5FA;
+  --sidebar-w:   240px;
+  --topbar-h:    64px;
+}
