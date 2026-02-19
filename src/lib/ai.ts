@@ -132,3 +132,4 @@ Respond ONLY with valid JSON:
     qualified: result.overallScore >= 60,
   };
 }
+export const checkProposalWithAI = checkProposalQuality;
