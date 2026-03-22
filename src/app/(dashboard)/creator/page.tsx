@@ -5,14 +5,14 @@ import Link from "next/link";
 
 export default async function CreatorDashboard() {
   const session = await auth();
-  const creator = await db.creator.findFirst({
+  const creator = await db.creatorProfile.findFirst({
     where: { user: { email: session?.user?.email! } },
     include: { proposals: { include: { campaign: { include: { brand: { include: { user: true } } } } } } },
   });
 
   const totalProposals = creator?.proposals.length ?? 0;
   const acceptedProposals = creator?.proposals.filter(p => p.status === "ACCEPTED").length ?? 0;
-  const totalEarnings = creator?.proposals.filter(p => p.status === "COMPLETED").reduce((s, p) => s + p.rate, 0) ?? 0;
+  const totalEarnings = creator?.proposals.filter(p => p.status === "COMPLETED").reduce((s, p) => s + (p.proposedBudget ?? 0), 0) ?? 0;
 
   return (
     <div>
@@ -42,7 +42,7 @@ export default async function CreatorDashboard() {
                     {p.status}
                   </span>
                 </div>
-                <p className="text-gray-400 text-sm mt-1">Rate: ₦{p.rate.toLocaleString()} · {p.campaign.brand.user.name}</p>
+                <p className="text-gray-400 text-sm mt-1">Rate: ₦{p.proposedBudget?.toLocaleString() ?? "N/A"} · {p.campaign.brand.user.name}</p>
               </div>
             ))}
           </div>

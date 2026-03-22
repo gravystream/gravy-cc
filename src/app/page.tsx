@@ -1,440 +1,1081 @@
-import React from "react";
+"use client";
+
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { Avatar } from "@/components/ui/Avatar";
-import { Star, Zap, Shield, DollarSign, Video, Users, TrendingUp, CheckCircle2, ArrowRight, Play } from "lucide-react";
+import { NovacloLogo } from "@/components/NovacloLogo";
 
-// ─── Mock data for hero creator cards ────────────────────────
-const FEATURED_CREATORS = [
-  { name: "Adeola Okafor",  niche: "Comedy · Lifestyle",  rate: "₦15K",  rating: 4.9,  jobs: 48,  loc: "Lagos",  avail: true  },
-  { name: "Emeka Nwosu",    niche: "Tech · Fintech",      rate: "₦25K",  rating: 4.8,  jobs: 36,  loc: "Abuja",  avail: true  },
-  { name: "Fatima Bello",   niche: "Fashion · Beauty",    rate: "₦20K",  rating: 5.0,  jobs: 62,  loc: "Lagos",  avail: false },
-  { name: "Chidi Eze",      niche: "Food · Lifestyle",    rate: "₦18K",  rating: 4.7,  jobs: 29,  loc: "PH",     avail: true  },
-  { name: "Ngozi Adeyemi",  niche: "Beauty · Skincare",   rate: "₦22K",  rating: 4.9,  jobs: 55,  loc: "Lagos",  avail: true  },
-  { name: "Kola Olanrewaju",niche: "Sports · Fitness",    rate: "₦16K",  rating: 4.6,  jobs: 21,  loc: "Ibadan", avail: false },
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface CreatorItem {
+  type: "creator";
+  id: number;
+  creator: string;
+  handle: string;
+  niche: string;
+  location: string;
+  rating: number;
+  aiScore: number;
+  jobs: number;
+  caption: string;
+  videoSrc: string;
+  accent: string;
+  emoji: string;
+  views: string;
+  likes: string;
+  comments: number;
+}
+
+interface BriefItem {
+  type: "brief";
+  id: number;
+  brand: string;
+  logo: string;
+  industry: string;
+  niche: string;
+  budget: string;
+  deadline: string;
+  slots: number;
+  proposals: number;
+  accent: string;
+  emoji: string;
+  title: string;
+  description: string;
+  requirements: string[];
+}
+
+type FeedItem = CreatorItem | BriefItem;
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const NICHES = [
+  "✦ All",
+  "💻 Tech",
+  "💄 Beauty",
+  "✈️ Travel",
+  "🏠 Real Estate",
+  "👗 Fashion",
+  "🍔 Food",
+  "💰 Finance",
 ];
 
-const HOW_IT_WORKS = {
-  creators: [
-    { n: "01", title: "Sign Up & Build Profile",  desc: "Create your portfolio, set your niche, rate and availability." },
-    { n: "02", title: "Browse Campaign Briefs",    desc: "Discover open campaigns from brands matching your niche." },
-    { n: "03", title: "Submit Proposal Videos",   desc: "Record a pitch video. AI scores quality & relevance." },
-    { n: "04", title: "Get Paid via Escrow",       desc: "Brand holds payment upfront. You get paid on approval." },
-  ],
-  brands: [
-    { n: "01", title: "Post a Campaign Brief",     desc: "Describe your brief, budget, and deadline. Funds held in escrow." },
-    { n: "02", title: "AI Filters Submissions",    desc: "Only quality-scored proposals above threshold reach your inbox." },
-    { n: "03", title: "Select Your Creator",       desc: "Browse qualified proposals. Direct hire or open campaign." },
-    { n: "04", title: "Approve & Release",         desc: "Review the final video, approve and payment is released." },
-  ],
-};
-
-const STATS = [
-  { v: "50K+",  l: "Active Creators" },
-  { v: "12K+",  l: "Campaigns Run" },
-  { v: "₦2B+",  l: "GMV Processed" },
-  { v: "4.9★",  l: "Avg Creator Rating" },
-];
-
-const FEATURES = [
+const FEED_ITEMS: FeedItem[] = [
   {
-    icon: <Zap className="w-5 h-5" />,
-    title: "AI Quality Gate",
-    desc: "Every submission is scored 0-100 on video quality, audio clarity and brief relevance. Only the best reach brands.",
-    color: "#D4A843",
+    type: "creator",
+    id: 1,
+    creator: "Ada Chukwu",
+    handle: "@adacreates",
+    niche: "Beauty",
+    location: "Lagos",
+    rating: 4.9,
+    aiScore: 87,
+    jobs: 34,
+    caption:
+      "Skincare routine using only Nigerian brands 🇳🇬 — watch how I transformed my skin in 30 days",
+    videoSrc:
+      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    accent: "#C026D3",
+    emoji: "💄",
+    views: "284K",
+    likes: "18.2K",
+    comments: 342,
   },
   {
-    icon: <Shield className="w-5 h-5" />,
-    title: "Escrow Protection",
-    desc: "Brands deposit funds upfront. Creators work with confidence knowing payment is secured and held until approval.",
-    color: "#22C55E",
-  },
-  {
-    icon: <DollarSign className="w-5 h-5" />,
-    title: "Flexible Campaigns",
-    desc: "Post open briefs to receive many proposals, or direct hire a specific creator you love — both with escrow.",
-    color: "#60A5FA",
-  },
-  {
-    icon: <Video className="w-5 h-5" />,
-    title: "TikTok-Style Discovery",
-    desc: "Browse creator talent like a TikTok feed. Filter by niche, location, rating, price and platform specialty.",
-    color: "#EF4444",
-  },
-  {
-    icon: <Users className="w-5 h-5" />,
-    title: "Proposal Pitching",
-    desc: "Creators record video pitches explaining their creative approach — brands see passion, not just a quote.",
-    color: "#A78BFA",
-  },
-  {
-    icon: <TrendingUp className="w-5 h-5" />,
-    title: "Real-Time Analytics",
-    desc: "Track campaign performance, creator ratings, spend history and ROI — all in one beautiful dashboard.",
-    color: "#F59E0B",
-  },
-];
-
-const PRICING = [
-  {
-    role: "Creator",
-    price: "₦10,000",
-    period: "/month",
-    trial: "7-day free trial",
-    popular: false,
-    features: [
-      "Browse all open campaign briefs",
-      "Submit unlimited proposals",
-      "Accept direct hire offers",
-      "AI feedback on every submission",
-      "Portfolio visible to all brands",
-      "Earnings dashboard & wallet",
-      "Real-time notifications",
+    type: "brief",
+    id: 2,
+    brand: "Flutterwave",
+    logo: "F",
+    industry: "Fintech",
+    niche: "Tech",
+    budget: "₦120,000",
+    deadline: "5 days left",
+    slots: 1,
+    proposals: 14,
+    accent: "#F97316",
+    emoji: "💻",
+    title: "Send Money Abroad — Zero Fees",
+    description:
+      "We need a 60-sec creator video showing how effortless it is to send money internationally with Flutterwave. Real person, real phone, real transfer. No scripts, no actors. Just you and your phone.",
+    requirements: [
+      "60 seconds max",
+      "Show the app live",
+      "Fintech or lifestyle creator preferred",
+      "Must be Lagos or Abuja based",
     ],
-    cta: "Start as Creator ✦",
-    href: "/signup/creator",
   },
   {
-    role: "Brand",
-    price: "₦5,000",
-    period: "/month",
-    trial: "7-day free trial",
-    popular: true,
-    features: [
-      "Full creator discovery feed",
-      "Post unlimited campaigns",
-      "AI-filtered qualified proposals only",
-      "Direct hire any creator",
-      "Escrow payment system",
-      "Campaign management & analytics",
-      "Pause any month you don't need it",
+    type: "creator",
+    id: 3,
+    creator: "Tunde Makinde",
+    handle: "@tundetech",
+    niche: "Tech",
+    location: "Abuja",
+    rating: 4.7,
+    aiScore: 91,
+    jobs: 61,
+    caption:
+      "Reviewed the new Tecno Phantom phone — the camera on this thing is actually insane 😤",
+    videoSrc:
+      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    accent: "#2563EB",
+    emoji: "💻",
+    views: "1.1M",
+    likes: "94.5K",
+    comments: 1203,
+  },
+  {
+    type: "brief",
+    id: 4,
+    brand: "Zaron Cosmetics",
+    logo: "Z",
+    industry: "Beauty",
+    niche: "Beauty",
+    budget: "₦75,000",
+    deadline: "3 days left",
+    slots: 3,
+    proposals: 23,
+    accent: "#DB2777",
+    emoji: "💄",
+    title: "New Matte Lipstick — Get Ready With Me",
+    description:
+      "Authentic GRWM video featuring our new matte lipstick range. We want real people, real routines. No corporate feel — just you getting ready and looking amazing.",
+    requirements: [
+      "GRWM format",
+      "Show product application",
+      "Authentic tone only",
+      "Female creator preferred",
     ],
-    cta: "Start as Brand →",
-    href: "/signup/brand",
+  },
+  {
+    type: "creator",
+    id: 5,
+    creator: "Zara Kamau",
+    handle: "@zaratravels",
+    niche: "Travel",
+    location: "Port Harcourt",
+    rating: 4.8,
+    aiScore: 79,
+    jobs: 22,
+    caption:
+      "Nobody talks about how beautiful Calabar is in December 😭 this is what you've been missing",
+    videoSrc:
+      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+    accent: "#0D9488",
+    emoji: "✈️",
+    views: "512K",
+    likes: "41.8K",
+    comments: 876,
+  },
+  {
+    type: "brief",
+    id: 6,
+    brand: "Airbnb Nigeria",
+    logo: "A",
+    industry: "Travel",
+    niche: "Travel",
+    budget: "₦200,000",
+    deadline: "7 days left",
+    slots: 2,
+    proposals: 8,
+    accent: "#0D9488",
+    emoji: "✈️",
+    title: "Lagos Weekend Getaway — 3 Stays",
+    description:
+      "Travel creator needed to document a Lagos weekend experience across 3 different Airbnb properties. Must include local food, vibes, and honest reviews. We want people to FEEL Lagos through your lens.",
+    requirements: [
+      "Min 90 seconds",
+      "Cover 3 Airbnb stays",
+      "Include food spots",
+      "Must be based in Lagos",
+    ],
+  },
+  {
+    type: "creator",
+    id: 7,
+    creator: "Femi Okafor",
+    handle: "@femistyle",
+    niche: "Fashion",
+    location: "Lagos",
+    rating: 4.6,
+    aiScore: 83,
+    jobs: 47,
+    caption:
+      "Styled 5 outfits under ₦15k from Yaba market — your fave designers are shaking rn 💀",
+    videoSrc:
+      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
+    accent: "#D4A843",
+    emoji: "👗",
+    views: "730K",
+    likes: "62.1K",
+    comments: 2104,
+  },
+  {
+    type: "brief",
+    id: 8,
+    brand: "Konga",
+    logo: "K",
+    industry: "E-Commerce",
+    niche: "Fashion",
+    budget: "₦90,000",
+    deadline: "4 days left",
+    slots: 4,
+    proposals: 19,
+    accent: "#D4A843",
+    emoji: "👗",
+    title: "Style It Your Way — Konga Fashion Week",
+    description:
+      "We want fashion creators to show off their personal style using items ordered on Konga. Unboxing, styling, real review. Make it feel like a vlog, not an ad.",
+    requirements: [
+      "Feature Konga app checkout",
+      "Outfit must be from Konga",
+      "60–120 seconds",
+      "Creator must have 5K+ followers",
+    ],
   },
 ];
 
-export default function LandingPage() {
+// ─── AI Score Badge ───────────────────────────────────────────────────────────
+
+function AIScoreBadge({ score }: { score: number }) {
+  const color =
+    score >= 85 ? "#22c55e" : score >= 70 ? "#f59e0b" : "#ef4444";
+  const label =
+    score >= 85 ? "Top Rated" : score >= 70 ? "Qualified" : "Rising";
   return (
-    <div className="min-h-screen bg-[#0A0A0A]">
-      <Navbar />
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        background: `${color}22`,
+        border: `1px solid ${color}66`,
+        borderRadius: 20,
+        padding: "3px 10px",
+      }}
+    >
+      <div
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: color,
+        }}
+      />
+      <span style={{ fontSize: 11, fontWeight: 700, color }}>
+        {label} · AI {score}
+      </span>
+    </div>
+  );
+}
 
-      {/* ─── HERO ─────────────────────────────────────────────── */}
-      <section className="relative pt-24 pb-20 overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute inset-0 bg-gravy-hero pointer-events-none" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-[#D4A843]/5 rounded-full blur-[100px] pointer-events-none" />
+// ─── Creator Card ─────────────────────────────────────────────────────────────
 
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            {/* Announce badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#1E1E1E] border border-[#2D2D2D] text-xs text-[#D4A843] font-medium mb-8 animate-fade-in">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D4A843] animate-pulse" />
-              Now open to all creators & brands across Nigeria
-              <ArrowRight className="w-3 h-3" />
-            </div>
+function CreatorCard({
+  item,
+  muted,
+  onToggleMute,
+}: {
+  item: CreatorItem;
+  muted: boolean;
+  onToggleMute: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [liked, setLiked] = useState(false);
 
-            {/* Headline */}
-            <h1 className="font-quicksand font-bold tracking-tight animate-slide-up"
-              style={{ fontSize: "clamp(40px, 6vw, 80px)", lineHeight: "1.06" }}>
-              <span className="text-white">Where Great Brands</span>
-              <br />
-              <span className="text-white">Find </span>
-              <span className="relative inline-block">
-                <span className="text-[#D4A843]">Creator Magic</span>
-                <svg className="absolute -bottom-2 left-0 w-full" height="6" viewBox="0 0 200 6" fill="none">
-                  <path d="M0 5 Q50 0 100 3 Q150 6 200 2" stroke="#D4A843" strokeWidth="2" strokeLinecap="round" opacity="0.6"/>
-                </svg>
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.play().catch(() => {});
+        } else {
+          el.pause();
+        }
+      },
+      { threshold: 0.6 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      style={{
+        background: "#0f0f1a",
+        borderRadius: 24,
+        overflow: "hidden",
+        border: `1px solid ${item.accent}33`,
+        boxShadow: `0 0 40px ${item.accent}18`,
+        position: "relative",
+      }}
+    >
+      {/* Video */}
+      <div style={{ position: "relative", aspectRatio: "9/14", background: "#000" }}>
+        <video
+          ref={videoRef}
+          src={item.videoSrc}
+          muted={muted}
+          loop
+          playsInline
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+
+        {/* Gradient overlay */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.95) 100%)",
+          }}
+        />
+
+        {/* Top strip */}
+        <div
+          style={{
+            position: "absolute",
+            top: 14,
+            left: 14,
+            right: 14,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+          }}
+        >
+          <div
+            style={{
+              background: item.accent,
+              color: "#fff",
+              fontSize: 12,
+              fontWeight: 700,
+              padding: "4px 12px",
+              borderRadius: 20,
+            }}
+          >
+            {item.emoji} {item.niche}
+          </div>
+
+          <button
+            onClick={onToggleMute}
+            style={{
+              background: "rgba(0,0,0,0.6)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              borderRadius: "50%",
+              width: 36,
+              height: 36,
+              cursor: "pointer",
+              color: "#fff",
+              fontSize: 15,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {muted ? "🔇" : "🔊"}
+          </button>
+        </div>
+
+        {/* Bottom overlay */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: "16px 16px 20px",
+          }}
+        >
+          {/* Engagement stats */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                background: "rgba(0,0,0,0.5)",
+                backdropFilter: "blur(6px)",
+                borderRadius: 20,
+                padding: "4px 10px",
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
+            >
+              <span style={{ fontSize: 12 }}>👁️</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>
+                {item.views}
               </span>
-            </h1>
-
-            <p className="mt-8 text-lg text-[#808080] max-w-2xl mx-auto leading-relaxed animate-fade-in">
-              The AI-powered creator marketplace where brands commission premium video content,
-              and creators build careers — with escrow protection on every deal.
-            </p>
-
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10 animate-fade-in">
-              <Link href="/signup/creator">
-                <Button variant="primary" size="lg" className="min-w-[220px]">
-                  Join as Creator ✦
-                </Button>
-              </Link>
-              <Link href="/signup/brand">
-                <Button variant="gold" size="lg" className="min-w-[220px]">
-                  Find Creators →
-                </Button>
-              </Link>
             </div>
 
-            {/* Social proof */}
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <div className="flex -space-x-2">
-                {["A","B","C","D","E"].map((i) => (
-                  <div key={i} className="w-8 h-8 rounded-full bg-[#2D2D2D] border-2 border-[#0A0A0A] flex items-center justify-center text-xs font-bold text-white">
-                    {i}
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-[#808080]">
-                <span className="text-white font-semibold">2,400+ creators</span> already on the platform
-              </p>
-            </div>
-          </div>
-
-          {/* Stats bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[#1E1E1E] rounded-2xl overflow-hidden mb-16 animate-slide-up">
-            {STATS.map((s) => (
-              <div key={s.l} className="bg-[#0A0A0A] px-6 py-6 text-center">
-                <div className="text-3xl font-bold text-white font-quicksand mb-1">{s.v}</div>
-                <div className="text-sm text-[#808080]">{s.l}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Featured creator cards preview */}
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-white font-quicksand">Featured Creators</h2>
-                <p className="text-sm text-[#808080] mt-1">Talent ready for your next campaign</p>
-              </div>
-              <Link href="/signup/brand">
-                <Button variant="ghost" size="sm" iconRight={<ArrowRight className="w-4 h-4" />}>
-                  Browse all
-                </Button>
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {FEATURED_CREATORS.map((c) => (
-                <div key={c.name} className="card-hover p-4 group cursor-pointer">
-                  {/* Avatar */}
-                  <div className="relative mb-3">
-                    <div className="w-12 h-12 rounded-full bg-[#2D2D2D] flex items-center justify-center font-bold text-lg text-white font-quicksand mx-auto">
-                      {c.name[0]}
-                    </div>
-                    {c.avail && (
-                      <span className="absolute bottom-0 right-[calc(50%-6px)] w-3 h-3 rounded-full bg-[#22C55E] border-2 border-[#0A0A0A]" />
-                    )}
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs font-semibold text-white truncate">{c.name}</div>
-                    <div className="text-[10px] text-[#808080] truncate mb-2">{c.niche}</div>
-                    <div className="flex items-center justify-center gap-1 mb-2">
-                      <Star className="w-3 h-3 fill-[#D4A843] text-[#D4A843]" />
-                      <span className="text-xs font-semibold text-white">{c.rating}</span>
-                    </div>
-                    <div className="text-xs font-bold text-white">from {c.rate}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── FEATURES ─────────────────────────────────────────── */}
-      <section id="how-it-works" className="py-24 bg-[#0A0A0A] border-t border-[#1E1E1E]">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="text-xs font-semibold text-[#D4A843] uppercase tracking-widest mb-4">Platform Features</div>
-            <h2 className="text-display-sm text-white font-quicksand mb-4">
-              Everything you need.<br />Nothing you don&apos;t.
-            </h2>
-            <p className="text-[#808080] max-w-xl mx-auto">
-              Built from the ground up for video content creators and the brands that want to work with them.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map((f) => (
-              <div key={f.title} className="card p-6 group hover:border-[#444444] transition-colors duration-200">
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                  style={{ backgroundColor: `${f.color}15`, color: f.color }}
-                >
-                  {f.icon}
-                </div>
-                <h3 className="text-base font-semibold text-white font-quicksand mb-2">{f.title}</h3>
-                <p className="text-sm text-[#808080] leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── HOW IT WORKS ─────────────────────────────────────── */}
-      <section className="py-24 border-t border-[#1E1E1E]">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="text-xs font-semibold text-[#D4A843] uppercase tracking-widest mb-4">How It Works</div>
-            <h2 className="text-display-sm text-white font-quicksand mb-4">
-              Two ways to use Gravy.<br />Both powered by AI.
-            </h2>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* For Creators */}
-            <div className="card p-8">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-[#D4A843]/15 flex items-center justify-center">
-                  <Video className="w-5 h-5 text-[#D4A843]" />
-                </div>
-                <h3 className="text-lg font-bold text-white font-quicksand">For Creators</h3>
-              </div>
-              <div className="space-y-5">
-                {HOW_IT_WORKS.creators.map((step, i) => (
-                  <div key={step.n} className="flex gap-4">
-                    <div className="w-8 h-8 rounded-lg bg-[#1E1E1E] flex items-center justify-center flex-shrink-0 text-xs font-bold text-[#D4A843] font-quicksand">
-                      {step.n}
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-white mb-1">{step.title}</div>
-                      <div className="text-xs text-[#808080] leading-relaxed">{step.desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-8">
-                <Link href="/signup/creator">
-                  <Button variant="primary" size="md" className="w-full">
-                    Join as Creator ✦
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* For Brands */}
-            <div className="card p-8 border-[#D4A843]/30">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-[#D4A843]/15 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-[#D4A843]" />
-                </div>
-                <h3 className="text-lg font-bold text-white font-quicksand">For Brands</h3>
-              </div>
-              <div className="space-y-5">
-                {HOW_IT_WORKS.brands.map((step) => (
-                  <div key={step.n} className="flex gap-4">
-                    <div className="w-8 h-8 rounded-lg bg-[#D4A843]/10 flex items-center justify-center flex-shrink-0 text-xs font-bold text-[#D4A843] font-quicksand">
-                      {step.n}
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-white mb-1">{step.title}</div>
-                      <div className="text-xs text-[#808080] leading-relaxed">{step.desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-8">
-                <Link href="/signup/brand">
-                  <Button variant="gold" size="md" className="w-full">
-                    Start Finding Creators →
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── PRICING ──────────────────────────────────────────── */}
-      <section id="pricing" className="py-24 border-t border-[#1E1E1E] bg-[#0A0A0A]">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="text-xs font-semibold text-[#D4A843] uppercase tracking-widest mb-4">Pricing</div>
-            <h2 className="text-display-sm text-white font-quicksand mb-4">
-              Simple, transparent pricing.
-            </h2>
-            <p className="text-[#808080] max-w-md mx-auto">
-              Start free for 7 days. Cancel or pause anytime. Platform commission only on completed jobs.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            {PRICING.map((plan) => (
-              <div
-                key={plan.role}
-                className={`card p-8 relative ${plan.popular ? "border-[#D4A843]/40" : ""}`}
+            <div
+              onClick={() => setLiked((l) => !l)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                background: liked ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.5)",
+                backdropFilter: "blur(6px)",
+                borderRadius: 20,
+                padding: "4px 10px",
+                border: liked
+                  ? "1px solid rgba(239,68,68,0.6)"
+                  : "1px solid rgba(255,255,255,0.1)",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              <span style={{ fontSize: 12 }}>{liked ? "❤️" : "🤍"}</span>
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: liked ? "#fca5a5" : "#fff",
+                }}
               >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-4 py-1 bg-[#D4A843] text-black text-xs font-bold rounded-full font-quicksand">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
+                {liked ? item.likes + " +1" : item.likes}
+              </span>
+            </div>
 
-                {/* Trial badge */}
-                <div className="mb-6">
-                  <Badge variant="trial" dot={false}>{plan.trial}</Badge>
-                </div>
-
-                <div className="mb-2">
-                  <span className="text-xs font-semibold text-[#808080] uppercase tracking-wider">For {plan.role}s</span>
-                </div>
-                <div className="flex items-end gap-1 mb-6">
-                  <span className="text-5xl font-bold text-white font-quicksand">{plan.price}</span>
-                  <span className="text-[#808080] mb-1.5">{plan.period}</span>
-                </div>
-
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-sm text-[#C7C7C7]">
-                      <CheckCircle2 className="w-4 h-4 text-[#22C55E] flex-shrink-0 mt-0.5" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <Link href={plan.href}>
-                  <Button
-                    variant={plan.popular ? "gold" : "primary"}
-                    size="lg"
-                    className="w-full"
-                  >
-                    {plan.cta}
-                  </Button>
-                </Link>
-              </div>
-            ))}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                background: "rgba(0,0,0,0.5)",
+                backdropFilter: "blur(6px)",
+                borderRadius: 20,
+                padding: "4px 10px",
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
+            >
+              <span style={{ fontSize: 12 }}>💬</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>
+                {item.comments.toLocaleString()}
+              </span>
+            </div>
           </div>
 
-          <p className="text-center text-xs text-[#444444] mt-8">
-            + 10% platform commission on completed campaigns · All prices in NGN · Paystack & Stripe accepted
+          {/* Caption */}
+          <p
+            style={{
+              color: "#f3f4f6",
+              fontSize: 14,
+              lineHeight: 1.5,
+              margin: "0 0 12px",
+              fontWeight: 500,
+            }}
+          >
+            {item.caption}
+          </p>
+
+          {/* Creator row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: `linear-gradient(135deg, ${item.accent}, #000)`,
+                border: `2px solid ${item.accent}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 14,
+                fontWeight: 800,
+                color: "#fff",
+                flexShrink: 0,
+              }}
+            >
+              {item.creator[0]}
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, color: "#fff", fontSize: 14 }}>
+                {item.creator}
+              </div>
+              <div style={{ color: "#9ca3af", fontSize: 12 }}>
+                {item.handle} · {item.location}
+              </div>
+            </div>
+            <div style={{ marginLeft: "auto", textAlign: "right" }}>
+              <div style={{ color: "#fbbf24", fontSize: 13 }}>★ {item.rating}</div>
+              <div style={{ color: "#6b7280", fontSize: 11 }}>{item.jobs} jobs done</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Score + CTA */}
+      <div
+        style={{
+          padding: "14px 16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderTop: `1px solid ${item.accent}22`,
+        }}
+      >
+        <AIScoreBadge score={item.aiScore} />
+        <Link href="/signup/creator">
+          <button
+            style={{
+              background: item.accent,
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              padding: "8px 18px",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            View Profile
+          </button>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ─── Brief Card ───────────────────────────────────────────────────────────────
+
+function BriefCard({ item }: { item: BriefItem }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: "#0f0f1a",
+        border: `1px solid ${item.accent}44`,
+        borderRadius: 24,
+        overflow: "hidden",
+        transition: "transform 0.2s, box-shadow 0.2s",
+        transform: hovered ? "scale(1.01)" : "scale(1)",
+        boxShadow: hovered
+          ? `0 12px 48px ${item.accent}30`
+          : `0 0 20px ${item.accent}10`,
+      }}
+    >
+      {/* Colored top bar */}
+      <div
+        style={{
+          height: 6,
+          background: `linear-gradient(90deg, ${item.accent}, transparent)`,
+        }}
+      />
+
+      <div style={{ padding: 20 }}>
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
+          <div
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: 12,
+              background: `linear-gradient(135deg, ${item.accent}, ${item.accent}88)`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 900,
+              fontSize: 20,
+              color: "#fff",
+              flexShrink: 0,
+            }}
+          >
+            {item.logo}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, color: "#fff", fontSize: 15 }}>
+              {item.brand}
+            </div>
+            <div style={{ color: "#6b7280", fontSize: 12 }}>{item.industry}</div>
+          </div>
+          <div
+            style={{
+              border: `2px solid ${item.accent}`,
+              borderRadius: 8,
+              padding: "4px 10px",
+              fontSize: 11,
+              fontWeight: 800,
+              color: item.accent,
+              letterSpacing: 1,
+              textTransform: "uppercase",
+            }}
+          >
+            Open Brief
+          </div>
+        </div>
+
+        {/* Title */}
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 800,
+            color: "#fff",
+            marginBottom: 10,
+            lineHeight: 1.3,
+          }}
+        >
+          {item.emoji} {item.title}
+        </div>
+
+        {/* Description */}
+        <p
+          style={{
+            color: "#9ca3af",
+            fontSize: 14,
+            lineHeight: 1.65,
+            margin: "0 0 16px",
+            fontStyle: "italic",
+          }}
+        >
+          &ldquo;{item.description}&rdquo;
+        </p>
+
+        {/* Requirements */}
+        <div style={{ marginBottom: 16 }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: "#6b7280",
+              fontWeight: 600,
+              marginBottom: 8,
+              letterSpacing: 0.5,
+            }}
+          >
+            REQUIREMENTS
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {item.requirements.map((r, i) => (
+              <span
+                key={i}
+                style={{
+                  background: "#1f2937",
+                  color: "#d1d5db",
+                  fontSize: 12,
+                  padding: "4px 10px",
+                  borderRadius: 6,
+                  border: "1px solid #374151",
+                }}
+              >
+                ✓ {r}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Stats row */}
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            marginBottom: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              background: "#052e16",
+              border: "1px solid #166534",
+              borderRadius: 12,
+              padding: "10px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 600 }}>
+              BUDGET
+            </span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: "#22c55e" }}>
+              {item.budget}
+            </span>
+          </div>
+          <div
+            style={{
+              flex: 1,
+              background: "#1c1400",
+              border: "1px solid #78350f",
+              borderRadius: 12,
+              padding: "10px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            <span style={{ fontSize: 11, color: "#fbbf24", fontWeight: 600 }}>
+              DEADLINE
+            </span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#f59e0b" }}>
+              {item.deadline}
+            </span>
+          </div>
+          <div
+            style={{
+              flex: 1,
+              background: "#1e1b4b",
+              border: "1px solid #3730a3",
+              borderRadius: 12,
+              padding: "10px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            <span style={{ fontSize: 11, color: "#818cf8", fontWeight: 600 }}>
+              SLOTS
+            </span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#a5b4fc" }}>
+              {item.slots} open
+            </span>
+          </div>
+        </div>
+
+        {/* Proposals avatars */}
+        <div
+          style={{
+            color: "#6b7280",
+            fontSize: 13,
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <div style={{ display: "flex" }}>
+            {[...Array(Math.min(5, item.proposals))].map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  background: `hsl(${i * 60}, 70%, 50%)`,
+                  border: "2px solid #0f0f1a",
+                  marginLeft: i > 0 ? -6 : 0,
+                }}
+              />
+            ))}
+          </div>
+          <span>{item.proposals} creators have submitted proposals</span>
+        </div>
+
+        {/* Locked CTA */}
+        <div style={{ position: "relative" }}>
+          <button
+            style={{
+              width: "100%",
+              padding: "14px 0",
+              background: `linear-gradient(90deg, ${item.accent}, ${item.accent}cc)`,
+              color: "#fff",
+              border: "none",
+              borderRadius: 12,
+              fontWeight: 800,
+              fontSize: 15,
+              letterSpacing: 0.3,
+              filter: "blur(3.5px)",
+              pointerEvents: "none",
+            }}
+          >
+            Submit My Proposal →
+          </button>
+          <Link href="/signup/creator" style={{ textDecoration: "none" }}>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                background: "rgba(0,0,0,0.55)",
+                borderRadius: 12,
+                backdropFilter: "blur(2px)",
+                cursor: "pointer",
+              }}
+            >
+              <span style={{ fontSize: 16 }}>🔒</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
+                Sign up free to apply
+              </span>
+            </div>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Home Page ────────────────────────────────────────────────────────────────
+
+export default function HomePage() {
+  const [activeNiche, setActiveNiche] = useState("✦ All");
+  const [muted, setMuted] = useState(true);
+
+  const filteredFeed = FEED_ITEMS.filter((item) => {
+    if (activeNiche === "✦ All") return true;
+    // Extract just the word part after the emoji (e.g. "💻 Tech" → "Tech")
+    const nicheWord = activeNiche.split(" ").slice(1).join(" ");
+    return item.niche === nicheWord;
+  });
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#080810",
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+        color: "#fff",
+      }}
+    >
+      {/* ── TOP NAV ── */}
+      <nav
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          background: "rgba(8,8,16,0.85)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          padding: "0 24px",
+        }}
+      >
+        {/* Logo row */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "14px 0 10px",
+          }}
+        >
+          <NovacloLogo />
+          <div style={{ display: "flex", gap: 8 }}>
+            <Link href="/how-it-works" style={{ textDecoration: "none" }}>
+            <button
+              style={{
+                padding: "7px 18px",
+                borderRadius: 8,
+                background: "transparent",
+                border: "none",
+                color: "#9ca3af",
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+            >
+              How it works
+            </button>
+          </Link>
+          <Link href="/login" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  padding: "7px 18px",
+                  borderRadius: 8,
+                  background: "transparent",
+                  border: "1px solid #374151",
+                  color: "#9ca3af",
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                Log in
+              </button>
+            </Link>
+            <Link href="/signup" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  padding: "7px 18px",
+                  borderRadius: 8,
+                  background: "#D4A843",
+                  border: "none",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  boxShadow: "0 0 20px #D4A84344",
+                }}
+              >
+                Get started →
+              </button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Niche tabs */}
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            overflowX: "auto",
+            paddingBottom: 12,
+            scrollbarWidth: "none",
+          }}
+        >
+          {NICHES.map((n) => (
+            <button
+              key={n}
+              onClick={() => setActiveNiche(n)}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 20,
+                border: "none",
+                background: activeNiche === n ? "#D4A843" : "#1a1a2e",
+                color: activeNiche === n ? "#fff" : "#6b7280",
+                fontWeight: activeNiche === n ? 700 : 500,
+                fontSize: 13,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                transition: "all 0.15s",
+                boxShadow: activeNiche === n ? "0 0 16px #D4A84344" : "none",
+              }}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* ── SCROLLABLE FEED ── */}
+      <div
+        style={{
+          maxWidth: 520,
+          margin: "0 auto",
+          padding: "24px 16px 100px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 20,
+        }}
+      >
+        {/* Hero text */}
+        <div style={{ textAlign: "center", padding: "8px 0 4px" }}>
+          <h1
+            style={{
+              fontSize: 26,
+              fontWeight: 900,
+              margin: "0 0 6px",
+              lineHeight: 1.2,
+              color: "#fff",
+            }}
+          >
+            Where creators get paid.
+            <br />
+            <span
+              style={{
+                background: "linear-gradient(90deg, #D4A843, #D4A843)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Where brands get results.
+            </span>
+          </h1>
+          <p style={{ color: "#4b5563", fontSize: 14, margin: 0 }}>
+            Scroll to explore. Sign up to participate.
           </p>
         </div>
-      </section>
 
-      {/* ─── CTA BANNER ───────────────────────────────────────── */}
-      <section className="py-24 border-t border-[#1E1E1E]">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-[#D4A843]/5 rounded-3xl blur-xl pointer-events-none" />
-            <div className="relative card border-[#D4A843]/20 p-16">
-              <h2 className="text-display-md text-white font-quicksand mb-6">
-                Ready to make your<br />
-                <span className="text-[#D4A843]">first great collab?</span>
-              </h2>
-              <p className="text-[#808080] mb-10 max-w-md mx-auto">
-                Join thousands of creators earning from their craft and brands getting content that converts.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/signup/creator">
-                  <Button variant="primary" size="lg">Start as Creator ✦</Button>
-                </Link>
-                <Link href="/signup/brand">
-                  <Button variant="gold" size="lg">Find Creators →</Button>
-                </Link>
-              </div>
+        {/* Feed */}
+        {filteredFeed.map((item) =>
+          item.type === "creator" ? (
+            <CreatorCard
+              key={item.id}
+              item={item}
+              muted={muted}
+              onToggleMute={() => setMuted((m) => !m)}
+            />
+          ) : (
+            <BriefCard key={item.id} item={item} />
+          )
+        )}
+
+        {filteredFeed.length === 0 && (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "60px 20px",
+              color: "#4b5563",
+            }}
+          >
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
+            <div style={{ fontWeight: 600 }}>No content in this niche yet</div>
+            <div style={{ fontSize: 13, marginTop: 6 }}>
+              Be the first to sign up and create it
             </div>
           </div>
-        </div>
-      </section>
+        )}
+      </div>
 
-      <Footer />
+      {/* ── STICKY BOTTOM CTA ── */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 200,
+          background: "rgba(8,8,16,0.9)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderTop: "1px solid rgba(255,255,255,0.07)",
+          padding: "14px 20px",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: "#fff" }}>
+            Ready to join?
+          </div>
+          <div style={{ fontSize: 12, color: "#6b7280" }}>
+            Free to sign up. 7-day free trial.
+          </div>
+        </div>
+        <Link href="/signup/creator" style={{ textDecoration: "none" }}>
+          <button
+            style={{
+              background: "linear-gradient(90deg, #D4A843, #C49238)",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 13,
+              padding: "10px 18px",
+              borderRadius: 10,
+              border: "none",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            I&apos;m a Creator
+          </button>
+        </Link>
+        <Link href="/signup/brand" style={{ textDecoration: "none" }}>
+          <button
+            style={{
+              background: "#ffffff",
+              color: "#111827",
+              fontWeight: 700,
+              fontSize: 13,
+              padding: "10px 18px",
+              borderRadius: 10,
+              border: "none",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            I&apos;m a Brand
+          </button>
+        </Link>
+      </div>
     </div>
   );
 }

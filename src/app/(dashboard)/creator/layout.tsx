@@ -1,6 +1,8 @@
+import LogoutButton from "@/components/LogoutButton";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import MessagesNavLink from "./_components/MessagesNavLink";
 
 export default async function CreatorLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -17,6 +19,7 @@ export default async function CreatorLayout({ children }: { children: React.Reac
           {[
             { href: "/creator", label: "Dashboard", icon: "📊" },
             { href: "/creator/briefs", label: "Browse Briefs", icon: "📋" },
+        { href: "/creator/contracts", label: "Contracts", icon: "📄" },
             { href: "/creator/proposals", label: "My Proposals", icon: "📤" },
             { href: "/creator/earnings", label: "Earnings", icon: "💰" },
             { href: "/creator/profile", label: "Profile", icon: "👤" },
@@ -28,10 +31,12 @@ export default async function CreatorLayout({ children }: { children: React.Reac
             </Link>
           ))}
         </nav>
+        <MessagesNavLink />
         <div className="pt-6 border-t border-gray-800">
           <p className="text-gray-400 text-sm">{session.user?.email}</p>
         </div>
-      </aside>
+        <LogoutButton />
+    </aside>
       <main className="flex-1 p-8">{children}</main>
     </div>
   );

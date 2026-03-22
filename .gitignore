@@ -33,3 +33,10 @@ next-env.d.ts
 # prisma
 /prisma/dev.db
 /prisma/dev.db-journal
+
+# binaries & temp files
+x86_64
+x86_64.l
+*.bak
+checkprofile.js
+checkuser.js

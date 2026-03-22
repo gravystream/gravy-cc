@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const brand = await db.brand.findFirst({ where: { user: { email: session.user?.email! } } });
+    const brand = await db.brandProfile.findFirst({ where: { user: { email: session.user?.email! } } });
     if (!brand) return NextResponse.json({ error: "Brand not found" }, { status: 404 });
 
     const body = await req.json();
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
         brandId: brand.id,
         title: body.title,
         description: body.description,
-        budget: body.budget,
+        budgetKobo: Math.round(body.budget * 100),
         deadline: new Date(body.deadline),
         niche: body.niche || [],
         platforms: body.platforms || [],

@@ -3,11 +3,22 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
 
+// Rate limiter: max 5 signup attempts per IP per 15 minutes
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) { rateLimitMap.set(ip, { count: 1, resetAt: now + 900000 }); return true; }
+  if (entry.count >= 5) return false;
+  entry.count++; return true;
+}
+
+
 const CreatorSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
-  username: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/),
+  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/),
   bio: z.string().max(400).optional(),
   location: z.string().optional(),
   niches: z.array(z.string()).default([]),
@@ -27,6 +38,8 @@ const BrandSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!checkRateLimit(ip)) return NextResponse.json({ error: "Too many signup attempts. Please wait 15 minutes." }, { status: 429 });
   try {
     const body = await req.json();
 

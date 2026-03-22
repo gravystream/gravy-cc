@@ -1,0 +1,87 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+
+// POST /api/portfolio — add a portfolio video to creator profile
+export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const profile = await db.creatorProfile.findUnique({ where: { userId: session.user.id } });
+  if (!profile) {
+    return NextResponse.json({ error: "Creator profile not found" }, { status: 404 });
+  }
+
+  const {
+    cloudinaryId, cloudinaryUrl, thumbnailUrl,
+    title, description, niche, platform,
+    durationSeconds, isFeatured,
+  } = await req.json();
+
+  if (!cloudinaryUrl) {
+    return NextResponse.json({ error: "cloudinaryUrl is required" }, { status: 400 });
+  }
+
+  const video = await db.portfolioVideo.create({
+    data: {
+      creatorId: profile.id,
+      cloudinaryId: cloudinaryId ?? cloudinaryUrl,
+      cloudinaryUrl,
+      thumbnailUrl: thumbnailUrl ?? null,
+      title: title ?? "",
+      description: description ?? "",
+      niche: niche ?? profile.niches[0] ?? "",
+      platform: platform ?? profile.platforms[0] ?? "",
+      durationSeconds: durationSeconds ?? 0,
+      isFeatured: isFeatured ?? false,
+    },
+  });
+
+  return NextResponse.json({ video }, { status: 201 });
+}
+
+// GET /api/portfolio — get current creator's portfolio videos
+export async function GET(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const profile = await db.creatorProfile.findUnique({ where: { userId: session.user.id } });
+  if (!profile) {
+    return NextResponse.json({ videos: [] });
+  }
+
+  const videos = await db.portfolioVideo.findMany({
+    where: { creatorId: profile.id },
+    orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+  });
+
+  return NextResponse.json({ videos });
+}
+
+// DELETE /api/portfolio?videoId=xxx
+export async function DELETE(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const videoId = req.nextUrl.searchParams.get("videoId");
+  if (!videoId) {
+    return NextResponse.json({ error: "videoId is required" }, { status: 400 });
+  }
+
+  const profile = await db.creatorProfile.findUnique({ where: { userId: session.user.id } });
+  const video = await db.portfolioVideo.findUnique({ where: { id: videoId } });
+
+  if (!video || !profile || video.creatorId === profile.id) {
+    return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });
+  }
+
+  await db.portfolioVideo.delete({ where: { id: videoId } });
+
+  return NextResponse.json({ success: true });
+}

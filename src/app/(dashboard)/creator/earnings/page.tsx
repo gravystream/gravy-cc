@@ -4,15 +4,15 @@ import { StatCard } from "@/components/ui";
 
 export default async function EarningsPage() {
   const session = await auth();
-  const creator = await db.creator.findFirst({ where: { user: { email: session?.user?.email! } } });
+  const creator = await db.creatorProfile.findFirst({ where: { user: { email: session?.user?.email! } } });
   const proposals = creator ? await db.proposal.findMany({
-    where: { creatorId: creator.id, status: { in: ["ACCEPTED","COMPLETED"] } },
-    include: { campaign: { include: { brand: { include: { user: true } } } }, payments: true },
+    where: { creatorId: creator.id, status: { in: ["SELECTED","SHORTLISTED"] } },
+    include: { campaign: { include: { brand: { include: { user: true } } } } },
     orderBy: { createdAt: "desc" },
   }) : [];
 
-  const totalEarned = proposals.filter(p => p.status === "COMPLETED").reduce((s, p) => s + p.rate, 0);
-  const pending = proposals.filter(p => p.status === "ACCEPTED").reduce((s, p) => s + p.rate, 0);
+  const totalEarned = proposals.filter(p => p.status === "SHORTLISTED").reduce((s, p) => s + (p.proposedBudget ?? 0), 0);
+  const pending = proposals.filter(p => p.status === "SELECTED").reduce((s, p) => s + (p.proposedBudget ?? 0), 0);
 
   return (
     <div>
@@ -24,7 +24,7 @@ export default async function EarningsPage() {
       <div className="grid grid-cols-3 gap-6 mb-8">
         <StatCard label="Total Earned" value={`₦${totalEarned.toLocaleString()}`} />
         <StatCard label="Pending Payout" value={`₦${pending.toLocaleString()}`} />
-        <StatCard label="Completed Deals" value={proposals.filter(p => p.status === "COMPLETED").length} />
+        <StatCard label="Completed Deals" value={proposals.filter(p => p.status === "SHORTLISTED").length} />
       </div>
 
       <div>
@@ -38,8 +38,8 @@ export default async function EarningsPage() {
                   <p className="text-gray-400 text-sm">{p.campaign.brand.user.name}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-white font-semibold">₦{p.rate.toLocaleString()}</p>
-                  <span className={`text-xs ${p.status === "COMPLETED" ? "text-green-400" : "text-yellow-400"}`}>{p.status}</span>
+                  <p className="text-white font-semibold">₦{(p.proposedBudget ?? 0).toLocaleString()}</p>
+                  <span className={`text-xs ${p.status === "SHORTLISTED" ? "text-green-400" : "text-yellow-400"}`}>{p.status}</span>
                 </div>
               </div>
             ))}

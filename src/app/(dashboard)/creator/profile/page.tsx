@@ -6,13 +6,30 @@ export default function CreatorProfilePage() {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  useEffect(() => {
+    fetch("/api/profile/creator")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.profile) {
+          const p = data.profile;
+          setForm((prev) => ({
+            ...prev,
+            bio: p.bio || "",
+            niche: (p.niches || []).join(", "),
+            ratePerPost: p.baseRateKobo ? String(p.baseRateKobo) : "",
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await fetch("/api/creators", {
-      method: "PATCH",
+    await fetch("/api/profile/creator", {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, niche: form.niche.split(",").map(n => n.trim()), followers: parseInt(form.followers), engagementRate: parseFloat(form.engagementRate), ratePerPost: parseFloat(form.ratePerPost) }),
+      body: JSON.stringify({ ...form, niches: form.niche.split(",").map(n => n.trim()), baseRateKobo: Math.round(parseFloat(form.ratePerPost)) }),
     });
     setLoading(false);
     setSaved(true);

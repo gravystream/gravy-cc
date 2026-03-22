@@ -7,11 +7,12 @@ import { checkProposalQuality } from "@/lib/ai";
 // Triggered by the BullMQ worker (or manually for dev)
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // In production this would be called by an internal worker with a secret header
   const workerSecret = req.headers.get("x-worker-secret");
-  const isWorker = workerSecret === process.env.WORKER_SECRET;
+  const configuredSecret = process.env.WORKER_SECRET;
+  const isWorker = !!(configuredSecret && configuredSecret.length >= 32 && workerSecret === configuredSecret);
 
   // Allow admins to trigger manually
   if (!isWorker) {
@@ -22,7 +23,7 @@ export async function POST(
   }
 
   const proposal = await db.proposal.findUnique({
-    where: { id: params.id },
+    where: { id: id },
     include: {
       campaign: { select: { description: true, requirements: true, deliverables: true, niche: true } },
       creator: { select: { niches: true } },
@@ -34,11 +35,12 @@ export async function POST(
 
   // Mark as under review
   await db.proposal.update({
-    where: { id: params.id },
+    where: { id: id },
     data: { status: "UNDER_AI_REVIEW" },
   });
 
   try {
+    const { id } = await params;
     const result = await checkProposalQuality({
       pitchVideoUrl: proposal.pitchCloudinaryUrl ?? undefined,
       coverLetter: proposal.coverLetter ?? undefined,
@@ -47,7 +49,7 @@ export async function POST(
     });
 
     await db.proposal.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         aiScore: result.overallScore,
         aiVideoScore: result.videoScore,
@@ -85,7 +87,7 @@ export async function POST(
     console.error("[AI_CHECK_PROPOSAL]", err);
     // Revert status on error
     await db.proposal.update({
-      where: { id: params.id },
+      where: { id: id },
       data: { status: "SUBMITTED" },
     });
     return NextResponse.json({ error: "AI check failed" }, { status: 500 });

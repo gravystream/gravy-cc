@@ -1,6 +1,8 @@
+import LogoutButton from "@/components/LogoutButton";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import MessagesNavLink from "./_components/MessagesNavLink";
 
 export default async function BrandLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -18,6 +20,8 @@ export default async function BrandLayout({ children }: { children: React.ReactN
             { href: "/brand", label: "Dashboard", icon: "📊" },
             { href: "/brand/discover", label: "Discover", icon: "🔍" },
             { href: "/brand/campaigns/new", label: "New Campaign", icon: "➕" },
+        { href: "/brand/wallet", label: "Wallet", icon: "💰" },
+        { href: "/brand/contracts", label: "Contracts", icon: "📋" },
           ].map(item => (
             <Link key={item.href} href={item.href}
               className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
@@ -26,10 +30,12 @@ export default async function BrandLayout({ children }: { children: React.ReactN
             </Link>
           ))}
         </nav>
+        <MessagesNavLink />
         <div className="pt-6 border-t border-gray-800">
           <p className="text-gray-400 text-sm">{session.user?.email}</p>
         </div>
-      </aside>
+        <LogoutButton />
+    </aside>
       <main className="flex-1 p-8">{children}</main>
     </div>
   );

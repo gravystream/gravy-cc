@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default async function BrandDashboard() {
   const session = await auth();
-  const brand = await db.brand.findFirst({ where: { user: { email: session?.user?.email! } }, include: { campaigns: { include: { proposals: true } } } });
+  const brand = await db.brandProfile.findFirst({ where: { user: { email: session?.user?.email! } }, include: { campaigns: { include: { proposals: true } } } });
 
   const totalCampaigns = brand?.campaigns.length ?? 0;
   const totalProposals = brand?.campaigns.reduce((s, c) => s + c.proposals.length, 0) ?? 0;
@@ -42,7 +42,12 @@ export default async function BrandDashboard() {
                     {c.status}
                   </span>
                 </div>
-                <p className="text-gray-400 text-sm mt-1">{c.proposals.length} proposals · Budget: ₦{c.budget.toLocaleString()}</p>
+                <p className="text-gray-400 text-sm mt-1">{c.proposals.length} proposals · Budget: ₦{Math.round(c.budgetKobo / 100).toLocaleString()}</p>
+                <div className="flex gap-2 mt-3">
+                  <Link href={`/brand/campaigns/${c.id}/proposals`} className="text-xs px-3 py-1.5 bg-[#D4A843] text-white rounded-lg font-medium hover:bg-[#b8922e] transition">
+                    View Proposals →
+                  </Link>
+                </div>
               </div>
             ))}
           </div>

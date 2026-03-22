@@ -1,43 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { db } from "@/lib/db";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.text();
-    const signature = req.headers.get("x-paystack-signature");
-    const secret = process.env.PAYSTACK_SECRET_KEY || "";
+  const rawBody = await req.text();
+  const signature = req.headers.get("x-paystack-signature") ?? "";
+  const secret = process.env.PAYSTACK_SECRET_KEY ?? "";
 
-    // Verify webhook signature
-    const hash = crypto.createHmac("sha512", secret).update(body).digest("hex");
-    if (hash !== signature) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  const hash = crypto.createHmac("sha512", secret).update(rawBody).digest("hex");
+
+  if (hash !== signature) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  const event = JSON.parse(rawBody);
+
+  if (event.event === "charge.success") {
+    const { metadata, reference, amount } = event.data;
+    const jobId = metadata?.jobId;
+    const escrowId = metadata?.escrowId;
+
+    if (!jobId) {
+      console.error("Paystack webhook: no jobId in metadata", metadata);
+      return NextResponse.json({ received: true });
     }
 
-    const event = JSON.parse(body);
-
-    if (event.event === "charge.success") {
-      const { reference, status } = event.data;
-      if (status === "success") {
-        await db.payment.update({
-          where: { reference },
-          data: { status: "SUCCESS", paystackRef: event.data.id?.toString() },
-        });
-
-        // Update proposal status to completed
-        const payment = await db.payment.findUnique({ where: { reference }, include: { proposal: true } });
-        if (payment) {
-          await db.proposal.update({
-            where: { id: payment.proposalId },
-            data: { status: "COMPLETED" },
+    try {
+      await db.$transaction(async (tx) => {
+        // Update escrow to FUNDED
+        if (escrowId) {
+          await tx.escrow.update({
+            where: { id: escrowId },
+            data: {
+              status: "FUNDED",
+              paystackRef: reference,
+            },
           });
         }
-      }
-    }
 
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error("Webhook error:", error);
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+        // Update job to IN_PROGRESS
+        await tx.job.update({
+          where: { id: jobId },
+          data: { status: "IN_PROGRESS" },
+        });
+      });
+
+      console.log(`Paystack: Job ${jobId} funded and set to IN_PROGRESS`);
+    } catch (err) {
+      console.error("Paystack webhook DB error:", err);
+      return NextResponse.json({ error: "DB update failed" }, { status: 500 });
+    }
   }
+
+  return NextResponse.json({ received: true });
 }
