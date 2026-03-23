@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import AIScoreRing from "@/components/ui/AIScoreRing";
 
 interface Proposal {
   id: string;
@@ -12,6 +13,9 @@ interface Proposal {
   proposedBudget: number | null;
   aiScore: number | null;
   aiFeedback: string | null;
+  aiVideoScore: number | null;
+  aiAudioScore: number | null;
+  aiRelevanceScore: number | null;
   createdAt: string;
   creatorProfile: {
     displayName: string;
@@ -138,11 +142,9 @@ export default function CampaignProposalsPage() {
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor[p.status] ?? "bg-gray-100 text-gray-600"}`}>
                       {p.status}
                     </span>
-                    {p.aiScore !== null && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
-                        AI Score: {p.aiScore}/100
-                      </span>
-                    )}
+                {p.aiScore !== null && (
+                  <AIScoreRing score={p.aiScore} size="sm" showLabel={false} />
+                )}
                   </div>
 
                   <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-3">

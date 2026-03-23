@@ -55,15 +55,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // AI check
     let aiScore = null;
     let aiFeedback = null;
+  let aiVideoScore = null;
+  let aiAudioScore = null;
+  let aiRelevanceScore = null;
+  let aiCheckedAt: Date | null = null;
+  let aiStatus = "SUBMITTED";
     try {
       const result = await checkProposalWithAI({
       coverLetter: body.pitch,
+    pitchVideoUrl: body.pitchVideoUrl ?? undefined,
       campaignBrief: campaign.description,
       creatorNiches: creator.niches ?? [],
-      deliverables: campaign.deliverables ?? [],
-    });
-      aiScore = result.score;
+      });
+      aiScore = result.overallScore;
       aiFeedback = result.feedback;
+    aiVideoScore = result.videoScore;
+    aiAudioScore = result.audioScore;
+    aiRelevanceScore = result.relevanceScore;
+    aiCheckedAt = new Date();
+    aiStatus = result.qualified ? "QUALIFIED" : "NOT_QUALIFIED";
     } catch (e) {
       console.error("AI check failed:", e);
     }
@@ -72,10 +82,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       data: {
         campaignId: id,
         creatorId: creator.id,
-    coverLetter: body.pitch,
-    proposedBudget: body.rate ? Number(body.rate) : undefined,
+      coverLetter: body.pitch,
+      pitchVideoUrl: body.pitchVideoUrl ?? undefined,
+      proposedBudget: body.rate ? Number(body.rate) : undefined,
         aiScore,
         aiFeedback,
+      aiVideoScore,
+      aiAudioScore,
+      aiRelevanceScore,
+      aiCheckedAt,
+      status: aiStatus as any,
       },
     });
     return NextResponse.json(proposal, { status: 201 });

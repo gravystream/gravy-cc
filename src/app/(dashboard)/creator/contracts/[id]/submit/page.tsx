@@ -18,6 +18,7 @@ export default function SubmitVideoPage({ params }: { params: { id: string } }) 
   const [socialPostUrl, setSocialPostUrl] = useState("");
   const [submitting, setSubmitting]     = useState(false);
   const [message, setMessage]           = useState("");
+  const [aiResult, setAiResult] = useState<{ approved: boolean; analysis: string } | null>(null);
 
   const openWidget = () => {
     if (typeof window === "undefined" || !window.cloudinary) {
@@ -54,7 +55,6 @@ export default function SubmitVideoPage({ params }: { params: { id: string } }) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           videoUrl,
-          videoPublicId,
           socialPostUrl: socialPostUrl || undefined,
         }),
       });
@@ -62,10 +62,7 @@ export default function SubmitVideoPage({ params }: { params: { id: string } }) 
       const data = await response.json();
 
       if (response.ok) {
-        setMessage("Video submitted successfully! Awaiting review.");
-        setTimeout(() => {
-          router.push("/creator/contracts/" + contractId);
-        }, 2000);
+          setAiResult({ approved: data.aiApproved, analysis: data.aiAnalysis ?? "" });
       } else {
         setMessage(data.error || "Submission failed. Please try again.");
       }
@@ -81,14 +78,41 @@ export default function SubmitVideoPage({ params }: { params: { id: string } }) 
       <h1 className="text-2xl font-bold text-white mb-2">Submit Promotional Video</h1>
       <p className="text-gray-400 text-sm mb-6">Upload your video and provide your social post link.</p>
 
-      {message && (
-        <div
-          className={"mb-6 p-4 rounded " + (message.includes("successfully") ? "bg-green-600/20 text-green-400" : "bg-red-600/20 text-red-400")}
-        >
-          {message}
-        </div>
-      )}
+        {message && (
+          <div className="mb-6 p-4 rounded bg-red-600/20 text-red-400">
+            {message}
+          </div>
+        )}
 
+        {aiResult && (
+          <div className={`rounded-lg p-6 ${aiResult.approved ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${aiResult.approved ? "bg-green-100" : "bg-red-100"}`}>
+                {aiResult.approved ? (
+                  <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                ) : (
+                  <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                )}
+              </div>
+              <h3 className={`font-semibold text-lg ${aiResult.approved ? "text-green-800" : "text-red-800"}`}>
+                {aiResult.approved ? "Video Approved!" : "Video Needs Revision"}
+              </h3>
+            </div>
+            {aiResult.analysis && (
+              <p className={`text-sm mb-4 ${aiResult.approved ? "text-green-700" : "text-red-700"}`}>
+                {aiResult.analysis}
+              </p>
+            )}
+            <button
+              onClick={() => router.back()}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${aiResult.approved ? "bg-green-600 hover:bg-green-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}`}
+            >
+              Back to Contract
+            </button>
+          </div>
+        )}
+
+        {!aiResult && (
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Video Upload */}
         <div>
@@ -147,6 +171,7 @@ export default function SubmitVideoPage({ params }: { params: { id: string } }) 
           {submitting ? "Submitting..." : "Submit Video"}
         </button>
       </form>
+        )}
 
       {/* Load Cloudinary widget script */}
       <script src="https://widget.cloudinary.com/v2.0/global/all.js" async />

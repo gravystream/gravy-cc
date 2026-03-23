@@ -9,6 +9,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   // In production this would be called by an internal worker with a secret header
   const workerSecret = req.headers.get("x-worker-secret");
   const configuredSecret = process.env.WORKER_SECRET;
@@ -40,8 +41,7 @@ export async function POST(
   });
 
   try {
-    const { id } = await params;
-    const result = await checkProposalQuality({
+      const result = await checkProposalQuality({
       pitchVideoUrl: proposal.pitchCloudinaryUrl ?? undefined,
       coverLetter: proposal.coverLetter ?? undefined,
       campaignBrief: `${proposal.campaign.description}\n\nRequirements: ${proposal.campaign.requirements}`,

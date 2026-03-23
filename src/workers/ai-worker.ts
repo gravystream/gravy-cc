@@ -38,7 +38,7 @@ async function processProposal(job: Job) {
     // No video — mark as not qualified
     await db.proposal.update({
       where: { id: proposalId },
-      data: { status: "NOT_QUALIFIED", aiScore: 0, aiScoreBreakdown: {} },
+      data: { status: "NOT_QUALIFIED", aiScore: 0, aiVideoScore: 0, aiAudioScore: 0, aiRelevanceScore: 0, aiFeedback: "No pitch video provided.", aiCheckedAt: new Date() },
     });
     return;
   }
@@ -52,20 +52,24 @@ async function processProposal(job: Job) {
   try {
     const result = await checkProposalQuality({
       proposalId,
-      videoUrl: proposal.pitchVideoUrl,
+      pitchVideoUrl: proposal.pitchVideoUrl,
       campaignBrief: proposal.campaign.description,
-      pitchText: proposal.pitchText,
+      coverLetter: proposal.coverLetter ?? undefined,
     });
 
-    const qualified = result.overall >= 60;
+    const qualified = result.qualified;
 
     await db.$transaction(async (tx) => {
       const updatedProposal = await tx.proposal.update({
         where: { id: proposalId },
         data: {
           status: qualified ? "QUALIFIED" : "NOT_QUALIFIED",
-          aiScore: result.overall,
-          aiScoreBreakdown: result.breakdown as any,
+          aiScore: result.overallScore,
+          aiVideoScore: result.videoScore,
+          aiAudioScore: result.audioScore,
+          aiRelevanceScore: result.relevanceScore,
+          aiFeedback: result.feedback,
+          aiCheckedAt: new Date(),
         },
       });
 
@@ -76,8 +80,8 @@ async function processProposal(job: Job) {
           type: qualified ? "PROPOSAL_QUALIFIED" : "PROPOSAL_NOT_QUALIFIED",
           title: qualified ? "✅ Proposal qualified!" : "❌ Proposal did not qualify",
           body: qualified
-            ? `Your proposal for "${proposal.campaign.title}" scored ${result.overall}/100 and passed AI review.`
-            : `Your proposal for "${proposal.campaign.title}" scored ${result.overall}/100 (minimum 60 required).`,
+            ? `Your proposal for "${proposal.campaign.title}" scored ${result.overallScore}/100 and passed AI review.`
+            : `Your proposal for "${proposal.campaign.title}" scored ${result.overallScore}/100 (minimum 60 required).`,
           actionUrl: `/creator/proposals`,
         },
       });
@@ -85,7 +89,7 @@ async function processProposal(job: Job) {
       return updatedProposal;
     });
 
-    console.log(`[AI Worker] Proposal ${proposalId} scored ${result.overall} → ${qualified ? "QUALIFIED" : "NOT_QUALIFIED"}`);
+    console.log(`[AI Worker] Proposal ${proposalId} scored ${result.overallScore} → ${qualified ? "QUALIFIED" : "NOT_QUALIFIED"}`);
   } catch (err) {
     console.error(`[AI Worker] Error checking proposal ${proposalId}:`, err);
     // Revert to SUBMITTED on error so it can be retried
@@ -122,9 +126,12 @@ async function processDeliverable(job: Job) {
     await db.jobDeliverable.update({
       where: { id: deliverableId },
       data: {
-        aiScore: result.overall,
-        aiScoreBreakdown: result.breakdown as any,
-        aiQualified: result.overall >= 60,
+        aiScore: result.overallScore,
+        aiVideoScore: result.videoScore,
+          aiAudioScore: result.audioScore,
+          aiRelevanceScore: result.relevanceScore,
+          aiFeedback: result.feedback,
+          aiCheckedAt: new Date(),
       },
     });
 
@@ -137,7 +144,7 @@ async function processDeliverable(job: Job) {
       },
     });
 
-    console.log(`[AI Worker] Deliverable ${deliverableId} scored ${result.overall}`);
+    console.log(`[AI Worker] Deliverable ${deliverableId} scored ${result.overallScore}`);
   } catch (err) {
     console.error(`[AI Worker] Error checking deliverable ${deliverableId}:`, err);
     throw err;

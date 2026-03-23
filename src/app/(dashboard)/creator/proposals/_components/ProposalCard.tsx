@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Copy, Check, ExternalLink, Calendar, DollarSign, Star } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Check, ExternalLink, Calendar, DollarSign } from "lucide-react";
+import AIScoreRing from "@/components/ui/AIScoreRing";
 
 type Proposal = {
   id: string;
@@ -10,6 +11,9 @@ type Proposal = {
   proposedBudget: number | null;
   aiScore: number | null;
   aiFeedback: string | null;
+  aiVideoScore: number | null;
+  aiAudioScore: number | null;
+  aiRelevanceScore: number | null;
   createdAt: string;
   campaign: {
     id: string;
@@ -56,7 +60,7 @@ export default function ProposalCard({ proposal }: { proposal: Proposal }) {
   return (
     <div className={`bg-gray-900 border rounded-xl overflow-hidden transition-all ${expanded ? "border-violet-700/50" : "border-gray-800 hover:border-gray-700"}`}>
       {/* Top bar  status accent */}
-      {proposal.status === "ACCEPTED" && (
+      {proposal.status === "QUALIFIED" && (
         <div className="h-0.5 bg-gradient-to-r from-green-500 to-emerald-400" />
       )}
       {(proposal.status === "REJECTED" || proposal.status === "NOT_QUALIFIED") && (
@@ -100,10 +104,7 @@ export default function ProposalCard({ proposal }: { proposal: Proposal }) {
                 </span>
               )}
               {proposal.aiScore != null && (
-                <span className="flex items-center gap-1.5 text-xs">
-                  <Star className="w-3.5 h-3.5 text-violet-400" />
-                  <span className="text-violet-300 font-medium">AI Score: {proposal.aiScore}/100</span>
-                </span>
+                <AIScoreRing score={proposal.aiScore} size="sm" showLabel={false} />
               )}
             </div>
           </div>
@@ -150,7 +151,7 @@ export default function ProposalCard({ proposal }: { proposal: Proposal }) {
             <div>
               <h4 className="text-gray-300 text-xs font-semibold uppercase tracking-widest mb-2">AI Feedback</h4>
               <div className={`rounded-xl p-4 border ${
-                proposal.status === "ACCEPTED"
+                proposal.status === "QUALIFIED"
                   ? "bg-green-900/10 border-green-700/30"
                   : proposal.status === "REJECTED"
                   ? "bg-red-900/10 border-red-700/30"

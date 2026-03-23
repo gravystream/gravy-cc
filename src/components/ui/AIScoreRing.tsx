@@ -62,3 +62,4 @@ export function AIScoreRing({ score, size = "md", showLabel = true, className }:
     </div>
   );
 }
+export default AIScoreRing;

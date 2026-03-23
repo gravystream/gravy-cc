@@ -43,7 +43,7 @@ export async function POST(
   let aiApproved = false;
   try {
     const response = await anthropic.messages.create({
-      model: "claude-opus-4-6",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 512,
       messages: [
         {
@@ -77,10 +77,9 @@ export async function POST(
       contractId: id,
       creatorId: creator.id,
       videoUrl,
-      videoPublicId: videoPublicId || null,
       socialPostUrl: socialPostUrl || null,
       aiAnalysis,
-      aiApproved,
+      aiScore: aiApproved ? 100 : 0,
       status: aiApproved ? "AI_APPROVED" : "AI_REJECTED",
     },
   });
