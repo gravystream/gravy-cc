@@ -1,71 +1,114 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
- 
+
+
+function makeUrl(pathname, req) {
+  const proto = req.headers.get("x-forwarded-proto") || "https";
+  const host = req.headers.get("host") || "novaclio.io";
+  return new URL(pathname, `${proto}://${host}`);
+}
+
 export async function middleware(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const isSecure = req.nextUrl.protocol === "https:";
+  const cookieName = isSecure ? "__Secure-authjs.session-token" : "authjs.session-token";
+  
+  let token = null;
+  try {
+    token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET, cookieName, salt: cookieName });
+  } catch (e) {}
+  
+  // Check if session cookie exists (any variant)
+  const hasCookie = req.cookies.has(cookieName) || 
+    req.cookies.has("authjs.session-token") || 
+    req.cookies.has("__Secure-authjs.session-token") ||
+    req.cookies.has("authjs.session-token.0") ||
+    req.cookies.has("__Secure-authjs.session-token.0");
+  
   const { pathname } = req.nextUrl;
- 
-  const isLoggedIn = !!token;
+  const hostname = req.headers.get("host") || "";
+  const isLoggedIn = !!token || hasCookie;
   const needsOnboarding = token?.needsOnboarding === true;
- 
+  const isAdminDesk = hostname.includes("desk.novaclio.io");
+
   const isOnboardingRoute = pathname.startsWith("/onboarding");
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
+  const isAdminLoginRoute = pathname.startsWith("/admin-login");
   const isDashboardRoute = pathname.startsWith("/dashboard");
+  const isAdminRoute = pathname.startsWith("/admin");
   const isApiRoute = pathname.startsWith("/api");
-  const isPublicRoute =
-    pathname === "/" ||
-    pathname.startsWith("/explore") ||
-    pathname.startsWith("/creator/") ||
-    pathname.startsWith("/how-it-works") ||
-    pathname.startsWith("/campaigns") ||
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon");
- 
-  // Allow API routes and public routes through
-  if (isApiRoute || isPublicRoute) {
+
+  // === DESK.NOVACLIO.IO ROUTING ===
+  if (isAdminDesk) {
+    if (isApiRoute || pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
+      return NextResponse.next();
+    }
+    if (pathname === "/") {
+      return NextResponse.redirect(makeUrl("/admin-login", req));
+    }
+    if (isAdminLoginRoute) {
+      // Only redirect away from login if we have a DECODED token (not just cookie)
+      if (token) {
+        const role = (token as any)?.role;
+        const adminRoles = ["OWNER","ADMINISTRATOR","TECHNICAL","SUPPORT"];
+        if (adminRoles.includes(role)) {
+          return NextResponse.redirect(makeUrl("/admin", req));
+        }
+      }
+      // Otherwise serve the login page (even if cookie exists but token can't be decoded)
+      return NextResponse.next();
+    }
+    if (isAdminRoute) {
+      // For admin routes, allow through if ANY session indicator exists
+      // The admin layout does its own server-side auth check
+      if (!isLoggedIn) {
+        return NextResponse.redirect(makeUrl("/admin-login", req));
+      }
+      return NextResponse.next();
+    }
+    return NextResponse.redirect(makeUrl("/admin-login", req));
+  }
+
+  // === NOVACLIO.IO ROUTING ===
+  if (isApiRoute || pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
     return NextResponse.next();
   }
- 
-  // Redirect logged-in users away from auth pages
+  if (pathname === "/" || pathname === "/how-it-works") {
+    return NextResponse.next();
+  }
+  if (isAdminLoginRoute) {
+    return NextResponse.redirect(makeUrl("/login", req));
+  }
   if (isAuthRoute && isLoggedIn) {
     if (needsOnboarding) {
-      return NextResponse.redirect(new URL("/onboarding", req.url));
+      return NextResponse.redirect(makeUrl("/onboarding", req));
     }
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    return NextResponse.redirect(makeUrl("/dashboard", req));
   }
- 
-  // Allow unauthenticated users to access auth pages
   if (isAuthRoute && !isLoggedIn) {
     return NextResponse.next();
   }
- 
-  // Protect onboarding routes
   if (isOnboardingRoute) {
     if (!isLoggedIn) {
-      return NextResponse.redirect(new URL("/login", req.url));
+      return NextResponse.redirect(makeUrl("/login", req));
     }
     if (!needsOnboarding) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+      return NextResponse.redirect(makeUrl("/dashboard", req));
     }
     return NextResponse.next();
   }
- 
-  // Protect dashboard routes
   if (isDashboardRoute) {
     if (!isLoggedIn) {
-      return NextResponse.redirect(new URL("/login", req.url));
+      return NextResponse.redirect(makeUrl("/login", req));
     }
     if (needsOnboarding) {
-      return NextResponse.redirect(new URL("/onboarding", req.url));
+      return NextResponse.redirect(makeUrl("/onboarding", req));
     }
     return NextResponse.next();
   }
- 
-  // All other routes: pass through
   return NextResponse.next();
 }
- 
+
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };

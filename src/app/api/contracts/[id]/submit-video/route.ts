@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { notifyVideoSubmitted } from "@/lib/email-notifications";
 import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -88,6 +89,27 @@ export async function POST(
     where: { id },
     data: { status: "SUBMITTED" },
   });
+
+
+    // Email notify the brand about video submission
+    try {
+      const jobForEmail = await db.job.findUnique({
+        where: { id },
+        include: {
+          campaign: { include: { user: { select: { email: true, name: true } } } },
+          creator: { include: { user: { select: { name: true } } } },
+        },
+      });
+      if (jobForEmail?.campaign?.user?.email) {
+        await notifyVideoSubmitted(
+          jobForEmail.campaign.user.email,
+          jobForEmail.campaign.user.name || "Brand",
+          jobForEmail.creator?.user?.name || "Creator",
+          jobForEmail.campaign.title || "Campaign",
+          id
+        );
+      }
+    } catch (emailErr) { console.error("Email notification failed:", emailErr); }
 
   return NextResponse.json({
     submissionId: submission.id,

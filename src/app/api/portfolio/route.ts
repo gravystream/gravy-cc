@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkPortfolioQuality } from "@/lib/ai";
+import { getConfigNumber } from "@/lib/platform-config";
 
 // POST /api/portfolio — add a portfolio video to creator profile
 export async function POST(req: NextRequest) {
@@ -84,4 +86,44 @@ export async function DELETE(req: NextRequest) {
   await db.portfolioVideo.delete({ where: { id: videoId } });
 
   return NextResponse.json({ success: true });
+}
+
+
+// Async helper to run AI portfolio scoring after video upload
+async function triggerPortfolioAiCheck(profileId: string, userId: string) {
+  try {
+    const profile = await db.creatorProfile.findUnique({
+      where: { id: profileId },
+      include: { portfolioVideos: true },
+    });
+    if (!profile || profile.portfolioVideos.length === 0) return;
+
+    const threshold = await getConfigNumber("ai_quality_threshold");
+
+    const result = await checkPortfolioQuality({
+      portfolioVideos: profile.portfolioVideos.map((v) => ({
+        title: v.title,
+        description: v.description || undefined,
+        niche: v.niche || undefined,
+        platform: v.platform || undefined,
+        cloudinaryUrl: v.cloudinaryUrl,
+      })),
+      creatorNiches: profile.niches,
+      creatorBio: profile.bio || undefined,
+    }, threshold);
+
+    await db.creatorProfile.update({
+      where: { id: profileId },
+      data: {
+        portfolioAiScore: result.overallScore,
+        portfolioAiFeedback: result.feedback,
+        portfolioAiCheckedAt: new Date(),
+        ...(result.qualified ? { isVerified: true } : {}),
+      },
+    });
+
+    console.log(`Portfolio AI check for ${profileId}: score=${result.overallScore}, qualified=${result.qualified}`);
+  } catch (err) {
+    console.error("triggerPortfolioAiCheck error:", err);
+  }
 }

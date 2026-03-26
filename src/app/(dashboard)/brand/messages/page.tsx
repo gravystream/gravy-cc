@@ -1,3 +1,4 @@
+import { formatMessagePreview } from "@/lib/formatMessagePreview";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
@@ -93,7 +94,7 @@ export default async function BrandMessagesPage() {
                     <p className="text-xs text-violet-400 mb-0.5"> {conv.campaign.title}</p>
                   )}
                   <p className="text-gray-400 text-sm truncate">
-                    {lastMsg ? lastMsg.content : "No messages yet  say hi!"}
+                    {lastMsg ? formatMessagePreview(lastMsg.content) : "No messages yet  say hi!"}
                   </p>
                 </div>
 

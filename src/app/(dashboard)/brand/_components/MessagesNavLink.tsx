@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -8,19 +8,26 @@ export default function MessagesNavLink() {
   const [unread, setUnread] = useState(0);
   const isActive = pathname.startsWith("/brand/messages");
 
+  // Use ref to prevent duplicate fetches in React strict mode
+  const hasFetched = useRef(false);
+
   useEffect(() => {
+    let cancelled = false;
     async function fetchUnread() {
       try {
         const res = await fetch("/api/conversations/unread-count");
-        if (res.ok) {
+        if (res.ok && !cancelled) {
           const data = await res.json();
           setUnread(data.count ?? 0);
         }
       } catch {}
     }
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 15000);
-    return () => clearInterval(interval);
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      fetchUnread();
+    }
+    const interval = setInterval(fetchUnread, 30000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   return (

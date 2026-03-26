@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkProposalWithAI } from "@/lib/ai";
+import { notifyNewProposal } from "@/lib/email-notifications";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -94,6 +95,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       status: aiStatus as any,
       },
     });
+    // Email notify the brand about new proposal
+    try {
+      const campaignWithBrand = await db.campaign.findUnique({
+        where: { id },
+        include: { user: { select: { email: true, name: true } } },
+      });
+      if (campaignWithBrand?.user?.email) {
+        await notifyNewProposal(
+          campaignWithBrand.user.email,
+          campaignWithBrand.user.name || "Brand",
+          session.user.name || "A creator",
+          campaignWithBrand.title || "Campaign",
+          id
+        );
+      }
+    } catch (emailErr) { console.error("Email notification failed:", emailErr); }
+
     return NextResponse.json(proposal, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: "Failed to create proposal" }, { status: 500 });

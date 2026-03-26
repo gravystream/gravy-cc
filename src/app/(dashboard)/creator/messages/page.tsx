@@ -1,3 +1,4 @@
+import { formatMessagePreview } from "@/lib/formatMessagePreview";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
@@ -86,7 +87,7 @@ export default async function CreatorMessagesPage() {
                     <p className="text-xs text-violet-400 mb-0.5"> {conv.campaign.title}</p>
                   )}
                   <p className="text-gray-400 text-sm truncate">
-                    {lastMsg ? lastMsg.content : "New conversation  reply to start!"}
+                    {lastMsg ? formatMessagePreview(lastMsg.content) : "New conversation  reply to start!"}
                   </p>
                 </div>
                 {conv.unreadCount > 0 && (

@@ -15,11 +15,39 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [form, setForm] = useState({ email: "", password: "" });
 
+  // Bug fix: Redirect authenticated users away from login page
+  React.useEffect(() => {
+    async function checkSession() {
+      try {
+        const res = await fetch("/api/auth/session");
+        const session = await res.json();
+        if (session?.user?.role) {
+          router.push(session.user.role === "BRAND" ? "/brand" : "/creator");
+        }
+      } catch {}
+    }
+    checkSession();
+  }, [router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     try {
+      // Check if this is an OAuth-only account before attempting credentials login
+      const checkRes = await fetch("/api/auth/check-provider", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email }),
+      });
+      if (checkRes.ok) {
+        const checkData = await checkRes.json();
+        if (checkData.isOAuthOnly) {
+          setError("This account uses Google sign-in. Please click \'Continue with Google\' below.");
+          setLoading(false);
+          return;
+        }
+      }
       const result = await signIn("credentials", { email: form.email, password: form.password, redirect: false });
       if (result?.error) { setError("Invalid email or password. Please try again."); setLoading(false); return; }
       if (callbackUrl && callbackUrl.startsWith("/")) { router.push(callbackUrl); }
@@ -106,6 +134,9 @@ function LoginForm() {
                   {showPassword?<EyeOff size={16}/>:<Eye size={16}/>}
                 </button>
               </div>
+            </div>
+            <div className="text-right">
+              <Link href="/forgot-password" className="text-xs text-[#808080] hover:text-[#D4A843] transition-colors">Forgot password?</Link>
             </div>
             <Button type="submit" variant="primary" size="md" loading={loading} className="w-full !rounded-xl !bg-[#D4A843] !text-black hover:!bg-[#C49C38] mt-2">
               {loading?"Signing in…":"Sign in"}{!loading&&<ArrowRight size={16}/>}

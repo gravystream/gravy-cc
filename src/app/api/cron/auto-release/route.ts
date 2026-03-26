@@ -27,10 +27,9 @@ export async function GET(req: NextRequest) {
       autoReleaseAt: { lte: now },
     },
   include: {
-    escrow: true,
     proposal: {
       include: {
-        campaign: { select: { title: true, userId: true } },
+        campaign: { select: { title: true, brand: { select: { userId: true } } } },
       },
     },
   },
@@ -45,11 +44,13 @@ export async function GET(req: NextRequest) {
 
   for (const job of overdueJobs) {
     try {
-      if (!job.escrow || job.escrow.status !== "FUNDED") {
+      // Fetch escrow separately since Job has escrowId but no relation
+    const escrow = job.escrowId ? await db.escrow.findUnique({ where: { id: job.escrowId } }) : null;
+
+    if (!escrow || escrow.status !== "FUNDED") {
         continue; // skip if escrow not funded
       }
 
-      const escrow = job.escrow!;
       const campaign = job.proposal?.campaign;
       const creatorPayout = escrow.amountKobo - escrow.platformFeeKobo;
 
@@ -101,7 +102,7 @@ export async function GET(req: NextRequest) {
         // Notify brand
         await tx.notification.create({
           data: {
-            userId: campaign?.userId ?? "",
+            userId: campaign?.brand?.userId ?? "",
             type: "GENERAL",
             title: "Payment auto-released",
             body: `Payment for "${campaign?.title ?? "Campaign"}" was auto-released to the creator after 7 days of no response.`,

@@ -61,7 +61,7 @@ Respond ONLY with valid JSON in this exact format:
 }`;
 
   const message = await client.messages.create({
-    model: "claude-3-5-sonnet-20241022",
+    model: "claude-3-haiku-20240307",
     max_tokens: 512,
     messages: [{ role: "user", content: prompt }],
   });
@@ -113,7 +113,7 @@ Respond ONLY with valid JSON:
 }`;
 
   const message = await client.messages.create({
-    model: "claude-3-5-sonnet-20241022",
+    model: "claude-3-haiku-20240307",
     max_tokens: 512,
     messages: [{ role: "user", content: prompt }],
   });
@@ -132,4 +132,84 @@ Respond ONLY with valid JSON:
     qualified: result.overallScore >= 60,
   };
 }
+
+// --- Portfolio AI Scoring ---
+
+interface CheckPortfolioInput {
+  portfolioVideos: {
+    title: string;
+    description?: string;
+    niche?: string;
+    platform?: string;
+    cloudinaryUrl: string;
+  }[];
+  creatorNiches: string[];
+  creatorBio?: string;
+}
+
+interface PortfolioAIResult {
+  overallScore: number;       // 0-100
+  contentQuality: number;     // 0-100
+  nicheRelevance: number;     // 0-100
+  profileCompleteness: number; // 0-100
+  feedback: string;
+  qualified: boolean;
+}
+
+export async function checkPortfolioQuality(input: CheckPortfolioInput, threshold: number = 50): Promise<PortfolioAIResult> {
+  const client = new Anthropic();
+
+  const videoDescriptions = input.portfolioVideos.map((v, i) =>
+    `Video ${i + 1}: "${v.title}" - Niche: ${v.niche || "unspecified"}, Platform: ${v.platform || "unspecified"}${v.description ? `, Description: ${v.description}` : ""}, URL: ${v.cloudinaryUrl}`
+  ).join("\n");
+
+  const prompt = `You are an AI quality gate for a creator marketplace platform. Evaluate this creator's portfolio to determine if they meet the platform's quality standards.
+
+CREATOR NICHES: ${input.creatorNiches.join(", ")}
+CREATOR BIO: ${input.creatorBio || "Not provided"}
+
+PORTFOLIO VIDEOS:
+${videoDescriptions}
+
+NUMBER OF VIDEOS: ${input.portfolioVideos.length}
+
+Score the portfolio on these criteria (each 0-100):
+1. CONTENT_QUALITY: Based on titles, descriptions, and variety. Do they show real content creation ability?
+2. NICHE_RELEVANCE: Do the videos align with the creator's stated niches?
+3. PROFILE_COMPLETENESS: Is there enough content to judge? (1 video = low, 3+ = good)
+
+OVERALL_SCORE = (CONTENT_QUALITY * 0.45) + (NICHE_RELEVANCE * 0.30) + (PROFILE_COMPLETENESS * 0.25)
+QUALIFIED = OVERALL_SCORE >= ${threshold}
+
+Respond ONLY with valid JSON:
+{
+  "contentQuality": <number>,
+  "nicheRelevance": <number>,
+  "profileCompleteness": <number>,
+  "overallScore": <number>,
+  "qualified": <boolean>,
+  "feedback": "<2-3 sentences of actionable feedback>"
+}`;
+
+  const message = await client.messages.create({
+    model: "claude-3-haiku-20240307",
+    max_tokens: 512,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  const text = (message.content[0] as { type: string; text: string }).text;
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("AI returned invalid JSON");
+
+  const result = JSON.parse(jsonMatch[0]);
+  return {
+    overallScore: Math.round(result.overallScore),
+    contentQuality: Math.round(result.contentQuality),
+    nicheRelevance: Math.round(result.nicheRelevance),
+    profileCompleteness: Math.round(result.profileCompleteness),
+    feedback: result.feedback,
+    qualified: result.overallScore >= threshold,
+  };
+}
+
 export const checkProposalWithAI = checkProposalQuality;

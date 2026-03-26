@@ -20,3 +20,15 @@ export async function GET(req: NextRequest) {
   const nextCursor = notifications.length === limit ? notifications[notifications.length - 1].id : null;
   return NextResponse.json({ notifications, unreadCount, nextCursor });
 }
+
+export async function PATCH() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  await db.notification.updateMany({
+    where: { userId: (session.user as any).id, isRead: false },
+    data: { isRead: true },
+  });
+  return NextResponse.json({ success: true });
+}

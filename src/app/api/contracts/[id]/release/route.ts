@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { notifyPaymentReleased } from "@/lib/email-notifications";
 
 export async function POST(
   _req: Request,
@@ -66,7 +67,27 @@ export async function POST(
       });
     });
 
-    return NextResponse.json({ success: true });
+    // Email notify the creator about payment release
+  try {
+    const jobForEmail = await db.job.findUnique({
+      where: { id },
+      include: {
+        campaign: { select: { title: true } },
+        creator: { include: { user: { select: { email: true, name: true } } } },
+        escrow: { select: { amountKobo: true } },
+      },
+    });
+    if (jobForEmail?.creator?.user?.email) {
+      await notifyPaymentReleased(
+        jobForEmail.creator.user.email,
+        jobForEmail.creator.user.name || "Creator",
+        jobForEmail.escrow?.amountKobo || 0,
+        jobForEmail.campaign?.title || "Campaign"
+      );
+    }
+  } catch (emailErr) { console.error("Email notification failed:", emailErr); }
+
+  return NextResponse.json({ success: true });
   } catch (error) {
     console.error("POST /api/contracts/[id]/release error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

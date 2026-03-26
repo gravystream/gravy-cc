@@ -86,20 +86,25 @@ export async function PUT(req: NextRequest) {
   }
 
   const profile = await db.creatorProfile.findUnique({ where: { userId: session.user.id } });
-  if (!profile) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-  }
+  // profile may be null for new users - will be upserted below
 
   const updates = await req.json();
 
   // If username is being changed, check uniqueness
-  if (updates.username && updates.username !== profile.username) {
+  if (updates.username && profile && updates.username !== profile.username) {
     const conflict = await db.creatorProfile.findUnique({ where: { username: updates.username } });
     if (conflict) {
       return NextResponse.json({ error: "Username already taken" }, { status: 409 });
     }
   }
 
+    const existingProfile = await db.creatorProfile.findUnique({ where: { userId: session.user.id } });
+  if (!existingProfile) {
+    const ep = (session.user.email ?? session.user.id).split(String.fromCharCode(64))[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    await db.creatorProfile.create({ data: { userId: session.user.id, username: ep+String(Date.now()), displayName: session.user.name ?? ep, bio: ''+'', niches: [], platforms: [], baseRateKobo: 0 } });
+  }
+    let ep2 = await db.creatorProfile.findUnique({ where: { userId: session.user.id } });
+  if (!ep2) { await db.creatorProfile.create({ data: { userId: session.user.id, username: "u_"+String(Date.now()), displayName: session.user.name ?? "Creator", bio: "", niches: [], platforms: [], baseRateKobo: 0 } }); }
   const updatedProfile = await db.creatorProfile.update({
     where: { userId: session.user.id },
     data: {

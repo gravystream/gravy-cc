@@ -19,7 +19,10 @@ datasource db {
 enum UserRole {
   CREATOR
   BRAND
-  ADMIN
+  OWNER
+  ADMINISTRATOR
+  TECHNICAL
+  SUPPORT
 }
 
 enum SubscriptionStatus {
@@ -48,6 +51,7 @@ model User {
   brandProfile   BrandProfile?
   notifications Notification[]
   subscription Subscription?
+  resetTokens    PasswordResetToken[]
 
   @@index([email])
   @@index([role])
@@ -160,7 +164,12 @@ model CreatorProfile {
   youtubeUrl    String?
   twitterUrl    String?
 
-  createdAt DateTime @default(now())
+  // AI Portfolio Scoring
+  portfolioAiScore    Int?
+  portfolioAiFeedback String?
+  portfolioAiCheckedAt DateTime?
+
+    createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([username])
@@ -172,6 +181,7 @@ model CreatorProfile {
   contracts         Contract[]    @relation(name: "CreatorContracts")
   escrowPayments    ContractEscrow[] @relation(name: "CreatorContractEscrows")
   videoSubmissions  VideoSubmission[] @relation(name: "CreatorVideoSubs")
+  shortlists    Shortlist[]
 }
 
 model PortfolioVideo {
@@ -225,6 +235,7 @@ model BrandProfile {
   brandWallet       BrandWallet?
   contracts         Contract[]     @relation(name: "BrandContracts")
   escrowPayments    ContractEscrow[] @relation(name: "BrandContractEscrows")
+  shortlists    Shortlist[]
 }
 
 // ============================================================
@@ -781,4 +792,38 @@ model VideoSubmission {
 
   @@index([contractId])
   @@index([creatorId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+}
+
+model Shortlist {
+  id        String   @id @default(cuid())
+  brandId   String
+  creatorId String
+  createdAt DateTime @default(now())
+
+  brand   BrandProfile   @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  creator CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, creatorId])
+  @@index([brandId])
+  @@index([creatorId])
+}
+
+model PlatformConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
 }

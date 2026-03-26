@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { notifyProposalAccepted } from "@/lib/email-notifications";
 
 // POST /api/proposals/[id]/select — brand selects a proposal, creates a Job
 export async function POST(
@@ -98,6 +99,22 @@ export async function POST(
 
     return { job, proposal: updatedProposal };
   });
+
+  // Email notify the creator that their proposal was accepted
+  try {
+    const creatorUser = await db.user.findUnique({
+      where: { id: proposal.creatorId },
+      select: { email: true, name: true },
+    });
+    if (creatorUser?.email) {
+      await notifyProposalAccepted(
+        creatorUser.email,
+        creatorUser.name || "Creator",
+        proposal.campaign?.title || "Campaign",
+        result.job?.id || ""
+      );
+    }
+  } catch (emailErr) { console.error("Email notification failed:", emailErr); }
 
   return NextResponse.json(result, { status: 201 });
 }

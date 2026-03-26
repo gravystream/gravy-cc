@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
  
 export const authOptions: any = {
+  trustHost: true,
   adapter: PrismaAdapter(db),
   providers: [
     Google({
