@@ -33,7 +33,7 @@ export default async function AdminCampaignsPage() {
     <div>
       <h1 className="text-2xl font-bold text-white mb-6">Campaigns</h1>
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto -mx-2 px-2"><table className="w-full min-w-full max-w-[600px]">
           <thead>
             <tr className="border-b border-gray-800">
               <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">Title</th>
@@ -62,7 +62,7 @@ export default async function AdminCampaignsPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
         {campaigns.length === 0 && (
           <p className="text-gray-500 text-center py-8">No campaigns found.</p>
         )}

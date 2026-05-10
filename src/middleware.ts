@@ -1,114 +1,109 @@
-import { getToken } from "next-auth/jwt";
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-
-function makeUrl(pathname, req) {
-  const proto = req.headers.get("x-forwarded-proto") || "https";
-  const host = req.headers.get("host") || "novaclio.io";
-  return new URL(pathname, `${proto}://${host}`);
+interface RateLimitEntry {
+  count: number;
+  resetTime: number;
 }
 
-export async function middleware(req: NextRequest) {
-  const isSecure = req.nextUrl.protocol === "https:";
-  const cookieName = isSecure ? "__Secure-authjs.session-token" : "authjs.session-token";
-  
-  let token = null;
-  try {
-    token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET, cookieName, salt: cookieName });
-  } catch (e) {}
-  
-  // Check if session cookie exists (any variant)
-  const hasCookie = req.cookies.has(cookieName) || 
-    req.cookies.has("authjs.session-token") || 
-    req.cookies.has("__Secure-authjs.session-token") ||
-    req.cookies.has("authjs.session-token.0") ||
-    req.cookies.has("__Secure-authjs.session-token.0");
-  
-  const { pathname } = req.nextUrl;
-  const hostname = req.headers.get("host") || "";
-  const isLoggedIn = !!token || hasCookie;
-  const needsOnboarding = token?.needsOnboarding === true;
-  const isAdminDesk = hostname.includes("desk.novaclio.io");
+const rateLimitMap = new Map<string, RateLimitEntry>();
 
-  const isOnboardingRoute = pathname.startsWith("/onboarding");
-  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
-  const isAdminLoginRoute = pathname.startsWith("/admin-login");
-  const isDashboardRoute = pathname.startsWith("/dashboard");
-  const isAdminRoute = pathname.startsWith("/admin");
-  const isApiRoute = pathname.startsWith("/api");
+// Clean up expired entries periodically
+let lastCleanup = Date.now();
 
-  // === DESK.NOVACLIO.IO ROUTING ===
-  if (isAdminDesk) {
-    if (isApiRoute || pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
-      return NextResponse.next();
+function cleanup() {
+  const now = Date.now();
+  if (now - lastCleanup < 60000) return; // Only clean every 60s
+  lastCleanup = now;
+  for (const [key, entry] of rateLimitMap.entries()) {
+    if (now > entry.resetTime) {
+      rateLimitMap.delete(key);
     }
-    if (pathname === "/") {
-      return NextResponse.redirect(makeUrl("/admin-login", req));
-    }
-    if (isAdminLoginRoute) {
-      // Only redirect away from login if we have a DECODED token (not just cookie)
-      if (token) {
-        const role = (token as any)?.role;
-        const adminRoles = ["OWNER","ADMINISTRATOR","TECHNICAL","SUPPORT"];
-        if (adminRoles.includes(role)) {
-          return NextResponse.redirect(makeUrl("/admin", req));
-        }
+  }
+}
+
+function checkRateLimit(ip: string, path: string, max: number, windowMs: number): NextResponse | null {
+  cleanup();
+  const key = ip + ":" + path;
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
+    return null;
+  }
+
+  if (entry.count >= max) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil((entry.resetTime - now) / 1000)),
+        },
       }
-      // Otherwise serve the login page (even if cookie exists but token can't be decoded)
-      return NextResponse.next();
-    }
-    if (isAdminRoute) {
-      // For admin routes, allow through if ANY session indicator exists
-      // The admin layout does its own server-side auth check
-      if (!isLoggedIn) {
-        return NextResponse.redirect(makeUrl("/admin-login", req));
-      }
-      return NextResponse.next();
-    }
-    return NextResponse.redirect(makeUrl("/admin-login", req));
+    );
   }
 
-  // === NOVACLIO.IO ROUTING ===
-  if (isApiRoute || pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
+  entry.count++;
+  return null;
+}
+
+// Rate limit configuration per route pattern
+const RATE_LIMITS: { pattern: RegExp; max: number; windowMs: number }[] = [
+  // Auth endpoints - strict limits
+  { pattern: /^\/api\/auth/, max: 15, windowMs: 15 * 60 * 1000 },
+  // Registration/onboarding
+  { pattern: /^\/api\/onboarding/, max: 10, windowMs: 60 * 1000 },
+  // File uploads
+  { pattern: /^\/api\/upload/, max: 10, windowMs: 60 * 1000 },
+  // Public browsing endpoints
+  { pattern: /^\/api\/creators/, max: 60, windowMs: 60 * 1000 },
+  { pattern: /^\/api\/briefs/, max: 60, windowMs: 60 * 1000 },
+  // Message sending (prevent spam)
+  { pattern: /^\/api\/conversations\/.*\/messages/, max: 30, windowMs: 60 * 1000 },
+  // Contract operations
+  { pattern: /^\/api\/contracts/, max: 30, windowMs: 60 * 1000 },
+  // Default API rate limit
+  { pattern: /^\/api\//, max: 60, windowMs: 60 * 1000 },
+];
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Only rate limit API routes
+  if (!pathname.startsWith("/api/")) {
     return NextResponse.next();
   }
-  if (pathname === "/" || pathname === "/how-it-works") {
+
+  // Skip internal/health endpoints
+  if (pathname === "/api/health" || pathname === "/api/deploy-temp") {
     return NextResponse.next();
   }
-  if (isAdminLoginRoute) {
-    return NextResponse.redirect(makeUrl("/login", req));
-  }
-  if (isAuthRoute && isLoggedIn) {
-    if (needsOnboarding) {
-      return NextResponse.redirect(makeUrl("/onboarding", req));
+
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+
+  // Find matching rate limit config
+  for (const { pattern, max, windowMs } of RATE_LIMITS) {
+    if (pattern.test(pathname)) {
+      const blocked = checkRateLimit(ip, pathname, max, windowMs);
+      if (blocked) return blocked;
+      break;
     }
-    return NextResponse.redirect(makeUrl("/dashboard", req));
   }
-  if (isAuthRoute && !isLoggedIn) {
-    return NextResponse.next();
-  }
-  if (isOnboardingRoute) {
-    if (!isLoggedIn) {
-      return NextResponse.redirect(makeUrl("/login", req));
-    }
-    if (!needsOnboarding) {
-      return NextResponse.redirect(makeUrl("/dashboard", req));
-    }
-    return NextResponse.next();
-  }
-  if (isDashboardRoute) {
-    if (!isLoggedIn) {
-      return NextResponse.redirect(makeUrl("/login", req));
-    }
-    if (needsOnboarding) {
-      return NextResponse.redirect(makeUrl("/onboarding", req));
-    }
-    return NextResponse.next();
-  }
-  return NextResponse.next();
+
+  // Add security headers
+  const response = NextResponse.next();
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-XSS-Protection", "1; mode=block");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+
+  return response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: ["/api/:path*"],
 };

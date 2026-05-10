@@ -66,7 +66,7 @@ export default function BriefDetailPage() {
   );
 
   if (!campaign) return (
-    <div className="p-8 text-center text-gray-400">Campaign not found.</div>
+    <div className="p-4 md:p-8 text-center text-gray-400">Campaign not found.</div>
   );
 
   const budgetNGN = (campaign.budgetKobo / 100).toLocaleString();
@@ -84,7 +84,7 @@ export default function BriefDetailPage() {
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       <Link href="/creator/briefs" className="text-violet-400 hover:text-violet-300 text-sm">← Back to Briefs</Link>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+      <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-6 space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-white text-2xl font-bold">{campaign.title}</h1>
@@ -121,7 +121,7 @@ export default function BriefDetailPage() {
         </div>
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+      <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-6 space-y-4">
         <h2 className="text-white text-lg font-semibold">Submit Your Proposal</h2>
 
         {error && <p className="text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg px-4 py-2">{error}</p>}

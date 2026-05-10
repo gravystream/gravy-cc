@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { NotificationType } from "@prisma/client";
+import { sendPushToUser } from "@/lib/push";
 
 const SOCKET_INTERNAL_URL = process.env.SOCKET_INTERNAL_URL || "http://localhost:3002";
 
@@ -58,6 +59,19 @@ export async function notify(params: CreateNotificationParams) {
   } catch (err: any) {
     console.error("[Notify] Socket emit error:", err.message);
   }
+
+
+    // Send push notification
+    try {
+      await sendPushToUser(params.userId, {
+        title: params.title,
+        body: params.message,
+        url: params.link || "/dashboard/notifications",
+        tag: params.type,
+      });
+    } catch (pushErr) {
+      console.error("Push notification error:", pushErr);
+    }
 
   return notification;
 }

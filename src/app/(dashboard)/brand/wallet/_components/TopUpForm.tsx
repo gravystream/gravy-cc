@@ -87,7 +87,7 @@ export default function TopUpForm() {
         <label className="block text-sm font-medium text-gray-300 mb-3">
           Select Amount
         </label>
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid stagger-children grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           {presets.map((preset) => (
             <button
               key={preset.value}

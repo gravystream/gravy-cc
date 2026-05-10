@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
 export default async function ShortlistPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user) redirect("/login");
   const brandProfile = await db.brandProfile.findUnique({ where: { userId: session.user.id } });
   if (!brandProfile) redirect("/onboarding/brand");
@@ -26,7 +25,7 @@ export default async function ShortlistPage() {
           <Link href="/brand/discover" className="text-blue-600 hover:underline mt-2 inline-block">Discover creators</Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid stagger-children grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {shortlists.map((item) => (
             <div key={item.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-3">

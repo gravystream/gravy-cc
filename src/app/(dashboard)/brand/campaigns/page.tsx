@@ -75,7 +75,7 @@ export default async function CampaignsPage({ searchParams }: { searchParams: Pr
             <Link
               key={c.id}
               href={`/brand/campaigns/${c.id}`}
-              className="block bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-gray-600 transition"
+              className="block bg-gray-900 card-hover border border-gray-800 rounded-xl p-6 hover:border-gray-600 transition"
             >
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-white font-medium text-lg">{c.title}</h3>
@@ -97,7 +97,7 @@ export default async function CampaignsPage({ searchParams }: { searchParams: Pr
           ))}
         </div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-6 md:p-12 text-center">
           <p className="text-gray-400 mb-2">No campaigns found.</p>
           <Link href="/brand/campaigns/new" className="text-violet-400 hover:text-violet-300">
             Create your first campaign &rarr;

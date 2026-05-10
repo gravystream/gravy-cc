@@ -19,7 +19,7 @@ export function DiscoverCreatorGrid({ creators }: { creators: Creator[] }) {
   const router = useRouter();
 
   return (
-    <div className="grid grid-cols-3 gap-6">
+    <div className="grid stagger-children grid-cols-1 md:grid-cols-3 gap-6">
       {creators.map((creator) => (
         <CreatorCard
           key={creator.id}

@@ -1,4 +1,5 @@
 "use client";
+import { io, Socket } from "socket.io-client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -40,6 +41,9 @@ export default function ChatRoom({
   backHref,
 }: Props) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const socketRef = useRef<Socket | null>(null);
+  const [isTyping, setIsTyping] = useState<string | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [input, setInput]       = useState("");
   const [sending, setSending]   = useState(false);
   const bottomRef               = useRef<HTMLDivElement>(null);
@@ -49,6 +53,53 @@ export default function ChatRoom({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    const token = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('session='))
+      ?.split('=')[1];
+
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+    const socket = io(socketUrl, {
+      auth: { token },
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('[Socket] Connected');
+      socket.emit('conversation:join', { conversationId });
+    });
+
+    socket.on('message:new', (data: any) => {
+      setMessages(prev => {
+        const exists = prev.some(m => m.id === data.id);
+        return exists ? prev : [...prev, data];
+      });
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 0);
+    });
+
+    socket.on('message:typing', (data: any) => {
+      setIsTyping(data.userName || data.userId);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => setIsTyping(null), 3000);
+    });
+
+    socket.on('message:stop-typing', () => {
+      setIsTyping(null);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    });
+
+    return () => {
+      socket.emit('conversation:leave', { conversationId });
+      socket.disconnect();
+    };
+  }, [conversationId]);
 
   // Poll for new messages every 4 seconds
   useEffect(() => {
@@ -61,9 +112,18 @@ export default function ChatRoom({
         }
       } catch {}
     };
-    pollRef.current = setInterval(poll, 4000);
+    pollRef.current = setInterval(poll, 15000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [conversationId]);
+
+    const emitTyping = () => {
+    if (!socketRef.current?.connected) return;
+    socketRef.current.emit('message:typing', { conversationId, userId: currentUserId });
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      socketRef.current?.emit('message:stop-typing', { conversationId });
+    }, 2000);
+  };
 
   const handleSend = async () => {
     const text = input.trim();
@@ -174,7 +234,7 @@ export default function ChatRoom({
                         </div>
 
                         {/* Details grid */}
-                        <div className="grid grid-cols-3 divide-x divide-gray-800 border-b border-gray-800">
+                        <div className="grid grid-cols-1 md:grid-cols-3 divide-x divide-gray-800 border-b border-gray-800">
                           <div className="px-3 py-2.5 text-center">
                             <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">Platform</p>
                             <p className="text-xs text-gray-200 font-medium truncate">{notif.platform}</p>
@@ -245,7 +305,7 @@ export default function ChatRoom({
 
       {/* Input */}
       <div className="pt-4 border-t border-gray-800">
-        <div className="flex items-end gap-2 bg-gray-900 border border-gray-700 rounded-2xl px-4 py-2 focus-within:border-violet-600 transition-colors">
+        <div className="flex items-end gap-2 bg-gray-900 card-hover border border-gray-700 rounded-2xl px-4 py-2 focus-within:border-violet-600 transition-colors">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
