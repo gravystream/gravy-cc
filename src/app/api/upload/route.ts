@@ -19,12 +19,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Cloudinary not configured" }, { status: 500 });
   }
 
-  const { folder = "novaclio", resourceType = "video" } = await req.json().catch(() => ({}));
+  const { folder = "novaclio", resourceType = "image" } = await req.json().catch(() => ({}));
 
   const timestamp = Math.round(Date.now() / 1000);
   const paramsToSign = `folder=${folder}&timestamp=${timestamp}&upload_preset=${uploadPreset}`;
   const signature = crypto
-    .createHash("sha256")
+    .createHash("sha1")
     .update(paramsToSign + apiSecret)
     .digest("hex");
 

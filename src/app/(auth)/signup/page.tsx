@@ -10,7 +10,7 @@ export default function SignupPage() {
           <p className="text-gray-400 mt-2">Choose how you want to use Novaclio</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Link href="/signup/creator">
             <div className="bg-gray-900 border border-gray-800 hover:border-violet-500 rounded-2xl p-6 cursor-pointer transition-all text-center group">
               <div className="text-4xl mb-3">🎨</div>

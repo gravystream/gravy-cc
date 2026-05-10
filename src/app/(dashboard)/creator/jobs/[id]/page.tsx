@@ -72,7 +72,7 @@ export default function CreatorJobDetailPage() {
     </div>
   );
 
-  if (!job) return <div className="p-8 text-center text-gray-500">Job not found.</div>;
+  if (!job) return <div className="p-4 md:p-8 text-center text-gray-500">Job not found.</div>;
 
   const statusInfo = STATUS_LABELS[job.status] ?? { label: job.status, color: "bg-gray-100 text-gray-600", desc: "" };
   const amountNGN = (job.escrow?.amountKobo ?? 0) / 100;
@@ -93,7 +93,7 @@ export default function CreatorJobDetailPage() {
         <div className="mb-6 p-4 bg-blue-50 rounded-xl text-blue-800 text-sm">{statusInfo.desc}</div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 mb-8">
+      <div className="grid stagger-children grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Your Payout</p>
           <p className="text-2xl font-bold text-green-600">{myPayout.toLocaleString()}</p>

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ToastProvider } from "@/components/ui/Toast";
+import NotificationProvider from "@/components/NotificationProvider";
 
 export const metadata: Metadata = {
   title: "Novaclio — The Creator Marketplace",
@@ -27,7 +29,11 @@ export default function RootLayout({
         />
       </head>
       <body className="font-quicksand bg-[#0A0A0A] text-white antialiased">
-        {children}
+        <ToastProvider>
+            <NotificationProvider>
+          {children}
+          </NotificationProvider>
+        </ToastProvider>
       </body>
     </html>
   );

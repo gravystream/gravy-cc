@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       companyName,
       industry: industry ?? "",
       logoUrl: logoUrl ?? null,
-      website: website ?? null,
+      websiteUrl: website ?? null,
       description: description ?? "",
     },
   });
@@ -72,8 +72,10 @@ export async function PUT(req: NextRequest) {
       ...(updates.companyName && { companyName: updates.companyName }),
       ...(updates.industry !== undefined && { industry: updates.industry }),
       ...(updates.logoUrl !== undefined && { logoUrl: updates.logoUrl }),
-      ...(updates.website !== undefined && { website: updates.website }),
+      ...(updates.websiteUrl !== undefined && { websiteUrl: updates.websiteUrl }),
       ...(updates.description !== undefined && { description: updates.description }),
+          ...(updates.location !== undefined && { location: updates.location }),
+          ...(updates.slug !== undefined && { slug: updates.slug }),
     },
   });
 

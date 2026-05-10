@@ -24,7 +24,7 @@ export default async function BrandDashboard() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid stagger-children grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatCard label="Total Campaigns" value={totalCampaigns} />
         <StatCard label="Active Campaigns" value={activeCampaigns} />
         <StatCard label="Total Proposals" value={totalProposals} />
@@ -35,7 +35,7 @@ export default async function BrandDashboard() {
         {brand?.campaigns.length ? (
           <div className="space-y-4">
             {brand.campaigns.slice(0,5).map(c => (
-              <div key={c.id} className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+              <div key={c.id} className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-white font-medium">{c.title}</h3>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${c.status === "ACTIVE" ? "bg-green-900/30 text-green-400" : "bg-gray-800 text-gray-400"}`}>
@@ -52,7 +52,7 @@ export default async function BrandDashboard() {
             ))}
           </div>
         ) : (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+          <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-6 md:p-12 text-center">
             <p className="text-gray-400">No campaigns yet.</p>
             <Link href="/brand/campaigns/new" className="text-violet-400 hover:text-violet-300 mt-2 inline-block">Create your first campaign →</Link>
           </div>

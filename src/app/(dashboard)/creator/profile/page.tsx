@@ -76,7 +76,7 @@ export default function CreatorProfilePage() {
     }
     const widget = window.cloudinary.createUploadWidget(
       {
-        cloudName: 'di8dtknsq',
+        cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'di8dtknsq',
         uploadPreset: 'gravy_videos',
         sources: ['local', 'url', 'camera'],
         resourceType: 'image',
@@ -88,7 +88,12 @@ export default function CreatorProfilePage() {
         showSkipCropButton: true,
       },
       (err: any, result: any) => {
-        if (!err && result?.event === 'success') {
+        if (err) {
+          console.error('Upload error:', err);
+          alert('Upload failed: ' + (err.message || 'Unknown error. Please try again.'));
+          return;
+        }
+        if (result?.event === 'success') {
           const url = result.info.secure_url;
           setForm(f => ({ ...f, [type === 'avatar' ? 'avatarUrl' : 'coverUrl']: url }));
           widget.close();
@@ -97,7 +102,6 @@ export default function CreatorProfilePage() {
     );
     widget.open();
   };
-
   const togglePlatform = (platform: string) => {
     setForm(f => ({
       ...f,
@@ -148,24 +152,24 @@ export default function CreatorProfilePage() {
 
   if (pageLoading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6 flex items-center justify-center min-h-64">
+              <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="max-w-3xl pb-12">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white mb-1">Your Profile</h1>
+      <div className="mb-4 md:mb-8">
+        <h1 className="text-lg md:text-2xl font-bold text-white mb-1">Your Profile</h1>
         <p className="text-gray-400 text-sm">Update your creator profile to attract brands</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
 
         {/* Banner */}
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
             <label className="text-sm font-medium text-gray-300">Banner Image</label>
             <button type="button" onClick={() => openUploadWidget('cover')}
               className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
@@ -194,7 +198,7 @@ export default function CreatorProfilePage() {
         </div>
 
         {/* Basic Info */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-5">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-2xl p-4 md:p-6 space-y-5">
           <h2 className="text-base font-semibold text-white">Basic Info</h2>
 
           <div className="flex items-start gap-5">
@@ -206,7 +210,7 @@ export default function CreatorProfilePage() {
                 {form.avatarUrl ? (
                   <img src={form.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-3xl font-bold text-gray-500">
+                  <span className="text-xl md:text-3xl font-bold text-gray-500">
                     {form.displayName ? form.displayName[0].toUpperCase() : '?'}
                   </span>
                 )}
@@ -260,7 +264,7 @@ export default function CreatorProfilePage() {
         </div>
 
         {/* Content & Rates */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-5">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-2xl p-4 md:p-6 space-y-5">
           <h2 className="text-base font-semibold text-white">Content &amp; Rates</h2>
 
           <div>
@@ -288,7 +292,7 @@ export default function CreatorProfilePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid stagger-children grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Rate Per Post (&#8358;)</label>
               <input type="number" min="0" value={form.ratePerPost}
@@ -309,7 +313,7 @@ export default function CreatorProfilePage() {
         </div>
 
         {/* Social Links */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-2xl p-4 md:p-6 space-y-4">
           <div>
             <h2 className="text-base font-semibold text-white">Social Links</h2>
             <p className="text-xs text-gray-500 mt-1">Paste your full profile URLs</p>

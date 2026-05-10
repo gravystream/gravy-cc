@@ -113,7 +113,7 @@ export default function CreatorProfilePage() {
           </div>
 
           {/* Profile header  avatar overlaps cover */}
-          <div className="px-8 pb-8">
+          <div className="px-4 md:px-8 pb-8">
             {/* Avatar row */}
             <div className="flex items-end justify-between -mt-14 mb-5">
               {/* Avatar */}
@@ -163,7 +163,7 @@ export default function CreatorProfilePage() {
             )}
 
             {/* Stats row */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="grid stagger-children grid-cols-1 md:grid-cols-3 gap-3 mb-6">
               <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl px-4 py-3 text-center">
                 <div className="flex items-center justify-center gap-1.5 text-yellow-400 mb-1">
                   <Star className="w-4 h-4 fill-yellow-400" />
@@ -190,7 +190,7 @@ export default function CreatorProfilePage() {
             </div>
 
             {/* Two-column body */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid stagger-children grid-cols-1 md:grid-cols-3 gap-6">
               {/* Left  bio & niches */}
               <div className="md:col-span-2 space-y-5">
                 {creator.bio && (

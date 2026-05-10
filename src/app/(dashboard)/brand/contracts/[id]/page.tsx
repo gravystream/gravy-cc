@@ -50,8 +50,8 @@ export default async function BrandContractPage({
           </span>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
-          <div className="grid grid-cols-2 gap-6 mb-6">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-lg p-6 mb-6">
+          <div className="grid stagger-children grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
             <div>
               <p className="text-gray-400 text-sm mb-1">Creator</p>
               <p className="text-white font-medium">{contract.creator.user.name}</p>
@@ -96,7 +96,7 @@ export default async function BrandContractPage({
         </div>
 
         {contract.videoSubmissions.length > 0 && (
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
+          <div className="bg-gray-900 card-hover border border-gray-800 rounded-lg p-6 mb-6">
             <h2 className="text-xl font-bold text-white mb-4">Video Submissions</h2>
             {contract.videoSubmissions.map((submission) => (
               <div
@@ -136,7 +136,7 @@ export default async function BrandContractPage({
         )}
 
         {contract.status === 'SUBMITTED' && contract.escrowPayment?.status === 'HELD' && (
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+          <div className="bg-gray-900 card-hover border border-gray-800 rounded-lg p-6">
             <h2 className="text-xl font-bold text-white mb-4">Actions</h2>
             <form action={`/api/contracts/${contract.id}/release`} method="POST">
               <button

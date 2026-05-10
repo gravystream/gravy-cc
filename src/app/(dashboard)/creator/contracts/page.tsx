@@ -66,33 +66,33 @@ export default async function CreatorContractsPage({
   ]
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 min-h-screen bg-gray-950">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">My Contracts</h1>
+      <div className="mb-4 md:mb-8">
+        <h1 className="text-xl md:text-3xl font-bold text-white">My Contracts</h1>
         <p className="text-gray-400 mt-1">All your brand deals and contracts in one place</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+      <div className="grid stagger-children grid-cols-2 lg:grid-cols-4 gap-4 mb-4 md:mb-8">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-5">
           <p className="text-gray-400 text-sm mb-1">Total Earned</p>
-          <p className="text-green-400 text-2xl font-bold">{fmt(totalEarnedKobo)}</p>
+          <p className="text-green-400 text-lg md:text-2xl font-bold">{fmt(totalEarnedKobo)}</p>
           <p className="text-gray-500 text-xs mt-1">from completed contracts</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-5">
           <p className="text-gray-400 text-sm mb-1">Pending Payout</p>
-          <p className="text-blue-400 text-2xl font-bold">{fmt(pendingEarnKobo)}</p>
+          <p className="text-blue-400 text-lg md:text-2xl font-bold">{fmt(pendingEarnKobo)}</p>
           <p className="text-gray-500 text-xs mt-1">in active contracts</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-5">
           <p className="text-gray-400 text-sm mb-1">Needs Signature</p>
-          <p className="text-yellow-400 text-2xl font-bold">{pendingCount}</p>
+          <p className="text-yellow-400 text-lg md:text-2xl font-bold">{pendingCount}</p>
           <p className="text-gray-500 text-xs mt-1">awaiting your sign</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-5">
           <p className="text-gray-400 text-sm mb-1">Completed</p>
-          <p className="text-white text-2xl font-bold">{completedCount}</p>
+          <p className="text-white text-lg md:text-2xl font-bold">{completedCount}</p>
           <p className="text-gray-500 text-xs mt-1">fulfilled contracts</p>
         </div>
       </div>
@@ -100,7 +100,7 @@ export default async function CreatorContractsPage({
       {/* Pending Sign Alert */}
       {pendingCount > 0 && (
         <div className="mb-6 p-4 bg-yellow-600/10 border border-yellow-600/30 rounded-xl flex items-center gap-3">
-          <span className="text-2xl"></span>
+          <span className="text-lg md:text-2xl"></span>
           <div>
             <p className="text-yellow-400 font-medium">You have {pendingCount} contract{pendingCount > 1 ? 's' : ''} waiting for your signature</p>
             <p className="text-yellow-500 text-sm">Review and sign to activate the deal and receive payment into escrow.</p>
@@ -109,7 +109,7 @@ export default async function CreatorContractsPage({
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-900 border border-gray-800 rounded-xl p-1 w-fit flex-wrap">
+      <div className="flex gap-1 mb-6 bg-gray-900 card-hover border border-gray-800 rounded-xl p-1 w-fit flex-wrap">
         {tabs.map(t => (
           <Link
             key={t.key}
@@ -128,7 +128,7 @@ export default async function CreatorContractsPage({
       {/* Contracts list */}
       {filtered.length === 0 ? (
         <div className="text-center py-20 bg-gray-900 border border-gray-800 rounded-xl">
-          <p className="text-4xl mb-4"></p>
+          <p className="text-2xl md:text-4xl mb-4"></p>
           <p className="text-white text-lg font-medium mb-2">No contracts here yet</p>
           <p className="text-gray-400 text-sm mb-6">When brands send you contract offers, they will appear here</p>
           <Link href="/creator/briefs" className="px-5 py-2.5 bg-violet-600 text-white rounded-lg font-medium hover:bg-violet-700 transition text-sm">
@@ -147,7 +147,7 @@ export default async function CreatorContractsPage({
               <Link
                 key={contract.id}
                 href={`/creator/contracts/${contract.id}`}
-                className={`block bg-gray-900 border rounded-xl p-5 transition-all group ${
+                className={`block bg-gray-900 card-hover border rounded-xl p-5 transition-all group ${
                   isPending
                     ? 'border-yellow-600/40 hover:border-yellow-500'
                     : 'border-gray-800 hover:border-violet-700'
