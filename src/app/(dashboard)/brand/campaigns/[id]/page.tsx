@@ -36,6 +36,31 @@ interface CampaignAnalytics {
   }>;
 }
 
+interface CreatorROI {
+  trackingLinkId: string;
+  shortCode: string;
+  creator: {
+    id: string;
+    displayName: string;
+    avatarUrl: string | null;
+    tier: string;
+    isGravyArmy: boolean;
+  };
+  clicks: number;
+  uniqueClicks: number;
+  conversions: number;
+  conversionRate: number;
+  cpaKobo: number;
+  revenueKobo: number;
+}
+
+const TIER_BADGE: Record<string, string> = {
+  BRONZE: "bg-amber-900/40 text-amber-300 border-amber-700/40",
+  SILVER: "bg-gray-700/40 text-gray-200 border-gray-500/40",
+  GOLD: "bg-yellow-900/40 text-yellow-300 border-yellow-600/40",
+  PLATINUM: "bg-purple-900/40 text-purple-200 border-purple-500/40",
+};
+
 export default function BrandCampaignDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -44,10 +69,29 @@ export default function BrandCampaignDetailPage() {
   const [campaign, setCampaign] = useState<CampaignAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [roi, setRoi] = useState<CreatorROI[]>([]);
+  const [roiLoading, setRoiLoading] = useState(true);
 
   useEffect(() => {
     fetchCampaignAnalytics();
+    fetchPerCreatorRoi();
   }, [campaignId]);
+
+  const fetchPerCreatorRoi = async () => {
+    try {
+      setRoiLoading(true);
+      const res = await fetch(
+        `/api/brand/campaigns/${campaignId}/per-creator-roi`
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      setRoi(data.perCreator ?? []);
+    } catch {
+      // non-fatal — campaign analytics still load
+    } finally {
+      setRoiLoading(false);
+    }
+  };
 
   const fetchCampaignAnalytics = async () => {
     try {
@@ -333,6 +377,114 @@ export default function BrandCampaignDetailPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Per-Creator ROI */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <div className="p-6 border-b border-gray-800">
+          <h3 className="text-lg font-semibold text-white">
+            Per-creator performance
+          </h3>
+          <p className="text-sm text-gray-400 mt-1">
+            Sorted by conversions, then clicks. CPA is campaign budget ÷ conversions per creator.
+          </p>
+        </div>
+        {roiLoading ? (
+          <div className="p-8 text-center text-gray-400">Loading…</div>
+        ) : roi.length === 0 ? (
+          <div className="p-8 text-center text-gray-400">
+            No creator activity yet
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-800 bg-gray-900/50">
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">
+                    Creator
+                  </th>
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">
+                    Clicks
+                  </th>
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">
+                    Unique
+                  </th>
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">
+                    Conv
+                  </th>
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">
+                    Conv rate
+                  </th>
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">
+                    CPA (₦)
+                  </th>
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">
+                    Revenue (₦)
+                  </th>
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">
+                    Tier
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {roi.map((r) => {
+                  const tierClass =
+                    TIER_BADGE[r.creator.tier] ?? TIER_BADGE.BRONZE;
+                  return (
+                    <tr
+                      key={r.trackingLinkId}
+                      className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          {r.creator.avatarUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={r.creator.avatarUrl}
+                              alt={r.creator.displayName}
+                              className="w-7 h-7 rounded-full object-cover"
+                            />
+                          )}
+                          <span className="text-white">
+                            {r.creator.displayName}
+                          </span>
+                          {r.creator.isGravyArmy && (
+                            <span className="text-xs bg-purple-900/40 text-purple-200 border border-purple-500/40 px-2 py-0.5 rounded">
+                              GRAVY
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-white">{r.clicks}</td>
+                      <td className="px-6 py-4 text-gray-300">
+                        {r.uniqueClicks}
+                      </td>
+                      <td className="px-6 py-4 text-white font-semibold">
+                        {r.conversions}
+                      </td>
+                      <td className="px-6 py-4 text-gray-300">
+                        {(r.conversionRate * 100).toFixed(1)}%
+                      </td>
+                      <td className="px-6 py-4 text-gray-300">
+                        ₦{(r.cpaKobo / 100).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 text-gray-300">
+                        ₦{(r.revenueKobo / 100).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded border ${tierClass}`}
+                        >
+                          {r.creator.tier}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Campaign Links Table */}
