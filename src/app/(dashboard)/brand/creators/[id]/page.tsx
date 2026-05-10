@@ -6,6 +6,7 @@ import {
   ArrowLeft, Star, CheckCircle, Instagram, Youtube, Twitter,
   ExternalLink, Clock, Briefcase, MessageCircle, DollarSign, MapPin
 } from "lucide-react";
+import AudienceInsights from "@/components/AudienceInsights";
 
 type CreatorProfile = {
   id: string;
@@ -289,6 +290,10 @@ export default function CreatorProfilePage() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <AudienceInsights creatorId={creator.id} />
         </div>
       </div>
     </div>
