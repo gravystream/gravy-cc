@@ -18,6 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/campaigns", label: "Campaigns", icon: "" },
     { label: "Analytics", href: "/admin/analytics", icon: "" },
     { href: "/admin/tracking-links", label: "Tracking Links", icon: "" },
+    { href: "/admin/gravy-army", label: "Gravy Army", icon: "" },
   ];
 
   return (
