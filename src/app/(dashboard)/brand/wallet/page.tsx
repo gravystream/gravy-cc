@@ -42,7 +42,7 @@ export default async function BrandWalletPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-white mb-8">My Wallet</h1>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-8">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-lg p-6 mb-8">
           <div className="mb-6">
             <p className="text-gray-400 text-sm mb-2">Available Balance</p>
             <p className="text-4xl font-bold text-white">{balanceNGN}</p>
@@ -51,7 +51,7 @@ export default async function BrandWalletPage() {
           <TopUpForm />
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-lg p-6">
           <h2 className="text-xl font-bold text-white mb-4">Transaction History</h2>
           {transactions.length === 0 ? (
             <p className="text-gray-400">No transactions yet</p>

@@ -1,4 +1,5 @@
 "use client";
+import { io, Socket } from "socket.io-client";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -32,6 +33,9 @@ export default function ChatRoom({
   initialMessages,
 }: Props) {
   const [messages, setMessages]   = useState<Message[]>(initialMessages);
+  const socketRef = useRef<Socket | null>(null);
+  const [isTyping, setIsTyping] = useState<string | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [input, setInput]         = useState("");
   const [sending, setSending]     = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -63,6 +67,53 @@ export default function ChatRoom({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    const token = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('session='))
+      ?.split('=')[1];
+
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+    const socket = io(socketUrl, {
+      auth: { token },
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('[Socket] Connected');
+      socket.emit('conversation:join', { conversationId });
+    });
+
+    socket.on('message:new', (data: any) => {
+      setMessages(prev => {
+        const exists = prev.some(m => m.id === data.id);
+        return exists ? prev : [...prev, data];
+      });
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 0);
+    });
+
+    socket.on('message:typing', (data: any) => {
+      setIsTyping(data.userName || data.userId);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => setIsTyping(null), 3000);
+    });
+
+    socket.on('message:stop-typing', () => {
+      setIsTyping(null);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    });
+
+    return () => {
+      socket.emit('conversation:leave', { conversationId });
+      socket.disconnect();
+    };
+  }, [conversationId]);
+
   // Poll for new messages every 4 s
   useEffect(() => {
     const poll = async () => {
@@ -74,9 +125,18 @@ export default function ChatRoom({
         }
       } catch {}
     };
-    pollRef.current = setInterval(poll, 4000);
+    pollRef.current = setInterval(poll, 15000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [conversationId]);
+
+    const emitTyping = () => {
+    if (!socketRef.current?.connected) return;
+    socketRef.current.emit('message:typing', { conversationId, userId: currentUserId });
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      socketRef.current?.emit('message:stop-typing', { conversationId });
+    }, 2000);
+  };
 
   const handleSend = async () => {
     const text = input.trim();
@@ -242,7 +302,43 @@ export default function ChatRoom({
             </div>
             {msgs.map((msg) => {
               const isMe = msg.senderId === currentUserId;
-              return (
+              
+  // Render contract notification cards or plain text
+  const renderMessageContent = (content) => {
+    if (content && content.startsWith("CONTRACT_NOTIFICATION:")) {
+      try {
+        const jsonStr = content.replace("CONTRACT_NOTIFICATION:", "");
+        const data = JSON.parse(jsonStr);
+        return (
+          <div className="bg-gray-900 card-hover/50 border border-violet-500/30 rounded-lg p-3 my-1 max-w-xs">
+            <div className="flex items-center gap-2 mb-2">
+              <FileText size={16} className="text-violet-400" />
+              <span className="text-sm font-semibold text-violet-300">New Contract</span>
+            </div>
+            {data.deliverable && (
+              <p className="text-xs text-gray-300 mb-1">{data.deliverable}</p>
+            )}
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-400 mb-2">
+              {data.platform && <span>Platform: {data.platform}</span>}
+              {data.amount && <span>Amount: \u20A6{Number(String(data.amount).replace(/,/g, '')).toLocaleString()}</span>}
+              {data.deadline && <span>Deadline: {data.deadline}</span>}
+            </div>
+            <a
+              href={"/brand/contracts/" + data.contractId}
+              className="inline-block mt-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs rounded-md transition-colors font-medium"
+            >
+              View Contract
+            </a>
+          </div>
+        );
+      } catch (e) {
+        return <p className="whitespace-pre-wrap break-words">{content}</p>;
+      }
+    }
+    return <p className="whitespace-pre-wrap break-words">{content}</p>;
+  };
+
+return (
                 <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"} mb-1`}>
                   <div
                     className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm ${
@@ -251,7 +347,7 @@ export default function ChatRoom({
                         : "bg-gray-800 text-gray-100 rounded-bl-sm"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                    {renderMessageContent(msg.content)}
                     <p className={`text-[10px] mt-1 ${isMe ? "text-violet-300" : "text-gray-500"} text-right`}>
                       {new Date(msg.createdAt).toLocaleTimeString("en-NG", {
                         hour: "2-digit", minute: "2-digit",
@@ -268,7 +364,7 @@ export default function ChatRoom({
 
       {/* Input */}
       <div className="pt-4 border-t border-gray-800">
-        <div className="flex items-end gap-2 bg-gray-900 border border-gray-700 rounded-2xl px-4 py-2 focus-within:border-violet-600 transition-colors">
+        <div className="flex items-end gap-2 bg-gray-900 card-hover border border-gray-700 rounded-2xl px-4 py-2 focus-within:border-violet-600 transition-colors">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -317,7 +413,7 @@ export default function ChatRoom({
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-violet-500 resize-none"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid stagger-children grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Platform *</label>
                   <select
@@ -340,7 +436,7 @@ export default function ChatRoom({
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid stagger-children grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Amount () *</label>
                   <input

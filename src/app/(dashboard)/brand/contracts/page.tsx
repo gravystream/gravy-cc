@@ -82,23 +82,23 @@ export default async function BrandContractsPage({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+      <div className="grid stagger-children grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-5">
           <p className="text-gray-400 text-sm mb-1">Total Spent</p>
           <p className="text-white text-2xl font-bold">{fmt(totalSpentKobo)}</p>
           <p className="text-gray-500 text-xs mt-1">on completed contracts</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-5">
           <p className="text-gray-400 text-sm mb-1">In Escrow</p>
           <p className="text-blue-400 text-2xl font-bold">{fmt(committedKobo)}</p>
           <p className="text-gray-500 text-xs mt-1">active contracts</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-5">
           <p className="text-gray-400 text-sm mb-1">Pending Sign</p>
           <p className="text-yellow-400 text-2xl font-bold">{pendingCount}</p>
           <p className="text-gray-500 text-xs mt-1">awaiting creator</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-5">
           <p className="text-gray-400 text-sm mb-1">Completed</p>
           <p className="text-green-400 text-2xl font-bold">{completedCount}</p>
           <p className="text-gray-500 text-xs mt-1">fulfilled contracts</p>
@@ -106,7 +106,7 @@ export default async function BrandContractsPage({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-900 border border-gray-800 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 mb-6 bg-gray-900 card-hover border border-gray-800 rounded-xl p-1 w-fit">
         {tabs.map(t => (
           <Link
             key={t.key}
@@ -142,7 +142,7 @@ export default async function BrandContractsPage({
               <Link
                 key={contract.id}
                 href={`/brand/contracts/${contract.id}`}
-                className="block bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-violet-700 hover:bg-gray-900/80 transition-all group"
+                className="block bg-gray-900 card-hover border border-gray-800 rounded-xl p-5 hover:border-violet-700 hover:bg-gray-900 card-hover/80 transition-all group"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">

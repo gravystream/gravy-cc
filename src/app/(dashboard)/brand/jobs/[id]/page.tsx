@@ -76,7 +76,7 @@ export default function BrandJobDetailPage() {
     </div>
   );
 
-  if (!job) return <div className="p-8 text-center text-gray-500">Job not found.</div>;
+  if (!job) return <div className="p-4 md:p-8 text-center text-gray-500">Job not found.</div>;
 
   const statusInfo = STATUS_LABELS[job.status] ?? { label: job.status, color: "bg-gray-100 text-gray-600" };
   const amountNGN = (job.escrow?.amountKobo ?? 0) / 100;
@@ -100,7 +100,7 @@ export default function BrandJobDetailPage() {
         <p className="text-gray-500 text-sm mt-1">Creator: {job.creator.name ?? job.creator.email}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid stagger-children grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-xl border p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Escrow Amount</p>
           <p className="text-2xl font-bold text-gray-900">{amountNGN.toLocaleString()}</p>

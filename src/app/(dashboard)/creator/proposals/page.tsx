@@ -13,7 +13,7 @@ export default async function CreatorProposalsPage() {
 
   if (!creator) {
     return (
-      <div className="p-8 text-gray-400">
+      <div className="p-4 md:p-8 text-gray-400">
         No creator profile found.{" "}
         <Link href="/creator/profile" className="text-violet-400 underline">
           Set up your profile
@@ -44,13 +44,13 @@ export default async function CreatorProposalsPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">My Proposals</h1>
+      <div className="mb-4 md:mb-8">
+        <h1 className="text-lg md:text-2xl font-bold text-white">My Proposals</h1>
         <p className="text-gray-400 mt-1">Track your campaign applications and review what you submitted</p>
       </div>
 
       {/* Stats strip */}
-      <div className="grid grid-cols-4 gap-3 mb-8">
+      <div className="grid stagger-children grid-cols-2 sm:grid-cols-4 gap-3 mb-4 md:mb-8">
         {[
           { label: "Total", value: totalProposals, color: "text-white" },
           { label: "Pending", value: pendingProposals, color: "text-yellow-400" },
@@ -58,7 +58,7 @@ export default async function CreatorProposalsPage() {
           { label: "Rejected", value: rejectedProposals, color: "text-red-400" },
         ].map((stat) => (
           <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-center">
-            <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+            <p className={`text-lg md:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
             <p className="text-gray-500 text-xs mt-0.5">{stat.label}</p>
           </div>
         ))}
@@ -72,7 +72,7 @@ export default async function CreatorProposalsPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-4 md:p-6 md:p-12 text-center">
           <p className="text-gray-400 text-lg mb-2">No proposals yet</p>
           <p className="text-gray-500 text-sm mb-4">Browse campaigns and submit your first application</p>
           <Link

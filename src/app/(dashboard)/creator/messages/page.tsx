@@ -49,7 +49,7 @@ export default async function CreatorMessagesPage() {
       </div>
 
       {convWithUnread.length === 0 ? (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-6 md:p-12 text-center">
           <MessageSquare className="w-10 h-10 text-gray-600 mx-auto mb-3" />
           <p className="text-gray-400 mb-2">No messages yet</p>
           <p className="text-gray-500 text-sm">

@@ -89,7 +89,25 @@ export async function POST(
       }),
     ]);
 
-    return NextResponse.json({ message });
+    
+    // Emit to socket server for real-time delivery
+    try {
+      const socketUrl = process.env.SOCKET_INTERNAL_URL || "http://127.0.0.1:3003";
+      await fetch(socketUrl + "/emit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          room: "conv:" + conversationId,
+          event: "message:new",
+          data: { conversationId, message: newMessage },
+        }),
+      });
+    } catch (e) {
+      // Socket emit failure is non-critical
+      console.error("[WS] Failed to emit message:", e);
+    }
+
+return NextResponse.json({ message });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
