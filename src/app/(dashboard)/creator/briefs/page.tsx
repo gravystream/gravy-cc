@@ -9,16 +9,16 @@ export default async function BriefsPage() {
   });
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Browse Briefs</h1>
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="mb-4 md:mb-8">
+        <h1 className="text-lg md:text-2xl font-bold text-white">Browse Briefs</h1>
         <p className="text-gray-400">Find campaigns that match your style</p>
       </div>
 
       {campaigns.length > 0 ? (
         <div className="space-y-4">
           {campaigns.map(c => (
-            <div key={c.id} className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <div key={c.id} className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-4 md:p-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h3 className="text-white font-semibold text-lg">{c.title}</h3>
@@ -41,7 +41,7 @@ export default async function BriefsPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-4 md:p-6 md:p-12 text-center">
           <p className="text-gray-400">No active campaigns right now. Check back soon!</p>
         </div>
       )}

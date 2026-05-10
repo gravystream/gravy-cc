@@ -28,11 +28,11 @@ export default function NewCampaignPage() {
   };
 
   return (
-    <div className="max-w-2xl">
+    <div className="w-full max-w-2xl mx-4">
       <h1 className="text-2xl font-bold text-white mb-2">Create Campaign</h1>
       <p className="text-gray-400 mb-8">Set up a new influencer campaign</p>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
+      <div className="bg-gray-900 card-hover border border-gray-800 rounded-2xl p-4 md:p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{error}</div>}
           {[["title","Campaign Title","text"],["budget","Budget (₦)","number"],["deadline","Deadline","date"],["niche","Niches (comma-separated)","text"],["platforms","Platforms (comma-separated)","text"]].map(([field,label,type]) => (

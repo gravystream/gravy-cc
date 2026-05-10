@@ -67,7 +67,7 @@ export default async function CreatorContractPage({
       <div className="bg-gray-900 border border-gray-700 rounded-2xl overflow-hidden">
 
         {/* Document Header */}
-        <div className="bg-gray-800 border-b border-gray-700 px-8 py-6">
+        <div className="bg-gray-800 border-b border-gray-700 px-4 md:px-8 py-6">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Creator Services Agreement</p>
@@ -81,7 +81,7 @@ export default async function CreatorContractPage({
         </div>
 
         {/* Parties */}
-        <div className="px-8 py-6 border-b border-gray-700/60 grid grid-cols-2 gap-6">
+        <div className="px-4 md:px-8 py-6 border-b border-gray-700/60 grid stagger-children grid-cols-2 gap-6">
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">Brand (Client)</p>
             <p className="text-white font-semibold text-lg">{contract.brand.companyName}</p>
@@ -95,7 +95,7 @@ export default async function CreatorContractPage({
         </div>
 
         {/* Contract Terms */}
-        <div className="px-8 py-6 border-b border-gray-700/60 space-y-6">
+        <div className="px-4 md:px-8 py-6 border-b border-gray-700/60 space-y-6">
           <h2 className="text-sm text-gray-500 uppercase tracking-widest">Contract Terms</h2>
 
           {/* Deliverable */}
@@ -105,7 +105,7 @@ export default async function CreatorContractPage({
           </div>
 
           {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid stagger-children grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/40">
               <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Platform</p>
               <p className="text-white font-medium">{contract.platform ?? ''}</p>
@@ -142,7 +142,7 @@ export default async function CreatorContractPage({
         </div>
 
         {/* Escrow Note */}
-        <div className="px-8 py-4 border-b border-gray-700/60 bg-blue-950/30">
+        <div className="px-4 md:px-8 py-4 border-b border-gray-700/60 bg-blue-950/30">
           <div className="flex items-start gap-3">
             <span className="text-blue-400 text-lg mt-0.5">&#128274;</span>
             <div>
@@ -156,7 +156,7 @@ export default async function CreatorContractPage({
 
         {/* Sign Section */}
         {contract.status === 'PENDING_CREATOR_SIGN' && (
-          <div className="px-8 py-6">
+          <div className="px-4 md:px-8 py-6">
             <h2 className="text-lg font-bold text-white mb-1">Sign & Accept Contract</h2>
             <p className="text-gray-400 text-sm mb-5">
               By clicking the button below, you confirm you have read and agree to all terms above. This action is binding and will activate the contract.
@@ -177,7 +177,7 @@ export default async function CreatorContractPage({
 
         {/* Active State */}
         {contract.status === 'ACTIVE' && (
-          <div className="px-8 py-6">
+          <div className="px-4 md:px-8 py-6">
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-5 mb-4">
               <p className="text-blue-400 font-semibold mb-1">Contract Active &#10003;</p>
               <p className="text-blue-300/70 text-sm">You signed this contract. &#8358;{amtFormatted} is held in escrow. Complete the deliverable and submit your video below.</p>
@@ -192,7 +192,7 @@ export default async function CreatorContractPage({
 
         {/* Submitted State */}
         {contract.status === 'SUBMITTED' && (
-          <div className="px-8 py-6">
+          <div className="px-4 md:px-8 py-6">
             <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-5">
               <p className="text-purple-400 font-semibold mb-1">Deliverable Under Review</p>
               <p className="text-purple-300/70 text-sm">Your submission is being reviewed by the brand. Payment will be released upon approval.</p>
@@ -202,7 +202,7 @@ export default async function CreatorContractPage({
 
         {/* Completed State */}
         {contract.status === 'COMPLETED' && (
-          <div className="px-8 py-6">
+          <div className="px-4 md:px-8 py-6">
             <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-5">
               <p className="text-green-400 font-semibold mb-1">Contract Completed &#127881;</p>
               <p className="text-green-300/70 text-sm">This contract is fulfilled. &#8358;{amtFormatted} has been released to your earnings.</p>

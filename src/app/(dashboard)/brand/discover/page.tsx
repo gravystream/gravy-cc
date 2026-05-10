@@ -19,7 +19,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: { n
       {creators.length > 0 ? (
         <DiscoverCreatorGrid creators={creators} />
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-6 md:p-12 text-center">
           <p className="text-gray-400">No creators found. Check back soon!</p>
         </div>
       )}

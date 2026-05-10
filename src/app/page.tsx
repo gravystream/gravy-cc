@@ -284,10 +284,20 @@ function CreatorCard({
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
+    // Ensure muted attribute is set for mobile autoplay policy
+    el.setAttribute("muted", "");
+    el.muted = true;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          el.play().catch(() => {});
+          const playPromise = el.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(() => {
+              // Retry with muted if autoplay was blocked
+              el.muted = true;
+              el.play().catch(() => {});
+            });
+          }
         } else {
           el.pause();
         }
@@ -315,7 +325,8 @@ function CreatorCard({
           ref={videoRef}
           src={item.videoSrc}
           muted={muted}
-          loop
+          autoPlay
+            loop
           playsInline
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />

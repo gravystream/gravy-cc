@@ -15,13 +15,13 @@ export default async function EarningsPage() {
   const pending = proposals.filter(p => p.status === "SELECTED").reduce((s, p) => s + (p.proposedBudget ?? 0), 0);
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Earnings</h1>
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="mb-4 md:mb-8">
+        <h1 className="text-lg md:text-2xl font-bold text-white">Earnings</h1>
         <p className="text-gray-400">Track your income from campaigns</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid stagger-children grid-cols-1 md:grid-cols-3 gap-6 mb-4 md:mb-8">
         <StatCard label="Total Earned" value={`₦${totalEarned.toLocaleString()}`} />
         <StatCard label="Pending Payout" value={`₦${pending.toLocaleString()}`} />
         <StatCard label="Completed Deals" value={proposals.filter(p => p.status === "SHORTLISTED").length} />
@@ -32,7 +32,7 @@ export default async function EarningsPage() {
         {proposals.length > 0 ? (
           <div className="space-y-4">
             {proposals.map(p => (
-              <div key={p.id} className="bg-gray-900 border border-gray-800 rounded-xl p-6 flex items-center justify-between">
+              <div key={p.id} className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-4 md:p-6 flex items-center justify-between flex-wrap gap-2">
                 <div>
                   <h3 className="text-white font-medium">{p.campaign.title}</h3>
                   <p className="text-gray-400 text-sm">{p.campaign.brand.user.name}</p>
@@ -45,7 +45,7 @@ export default async function EarningsPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+          <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-4 md:p-6 md:p-12 text-center">
             <p className="text-gray-400">No earnings yet. Apply to campaigns to get started!</p>
           </div>
         )}

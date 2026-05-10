@@ -15,16 +15,16 @@ export default async function CreatorDashboard() {
   const totalEarnings = creator?.proposals.filter(p => p.status === "COMPLETED").reduce((s, p) => s + (p.proposedBudget ?? 0), 0) ?? 0;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-4 md:mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white">Creator Dashboard</h1>
+          <h1 className="text-lg md:text-2xl font-bold text-white">Creator Dashboard</h1>
           <p className="text-gray-400">Track your campaigns and earnings</p>
         </div>
         {creator && <AIScoreRing score={creator.aiScore} />}
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid stagger-children grid-cols-1 md:grid-cols-3 gap-6 mb-4 md:mb-8">
         <StatCard label="Total Proposals" value={totalProposals} />
         <StatCard label="Accepted" value={acceptedProposals} />
         <StatCard label="Earned" value={`₦${totalEarnings.toLocaleString()}`} />
@@ -35,8 +35,8 @@ export default async function CreatorDashboard() {
         {creator?.proposals.length ? (
           <div className="space-y-4">
             {creator.proposals.slice(0,5).map(p => (
-              <div key={p.id} className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <div className="flex items-center justify-between">
+              <div key={p.id} className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-4 md:p-6">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <h3 className="text-white font-medium">{p.campaign.title}</h3>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${p.status === "ACCEPTED" ? "bg-green-900/30 text-green-400" : p.status === "REJECTED" ? "bg-red-900/30 text-red-400" : "bg-yellow-900/30 text-yellow-400"}`}>
                     {p.status}
@@ -47,7 +47,7 @@ export default async function CreatorDashboard() {
             ))}
           </div>
         ) : (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
+          <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-4 md:p-6 md:p-12 text-center">
             <p className="text-gray-400">No proposals yet.</p>
             <Link href="/creator/briefs" className="text-violet-400 hover:text-violet-300 mt-2 inline-block">Browse campaigns →</Link>
           </div>

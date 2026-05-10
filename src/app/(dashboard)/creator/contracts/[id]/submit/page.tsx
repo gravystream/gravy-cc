@@ -74,7 +74,7 @@ export default function SubmitVideoPage({ params }: { params: { id: string } }) 
   };
 
   return (
-    <div className="max-w-lg mx-auto py-8 px-4">
+    <div className="w-full max-w-lg mx-4 mx-auto py-8 px-4">
       <h1 className="text-2xl font-bold text-white mb-2">Submit Promotional Video</h1>
       <p className="text-gray-400 text-sm mb-6">Upload your video and provide your social post link.</p>
 

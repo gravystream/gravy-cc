@@ -34,6 +34,7 @@ enum SubscriptionStatus {
 }
 
 model User {
+  pushSubscriptions PushSubscription[]
   // back-relations added for chat
   id            String    @id @default(cuid())
   email         String    @unique
@@ -56,6 +57,7 @@ model User {
   @@index([email])
   @@index([role])
   sentMessages    Message[]  @relation(name: "MessageSender")
+  trackingLinks   TrackingLink[] @relation("CreatorLinks")
 }
 
 model Account {
@@ -154,6 +156,7 @@ model CreatorProfile {
   responseTimeHours   Float   @default(24)
 
   portfolioVideos PortfolioVideo[]
+  creatorScore     CreatorScore?
   proposals       Proposal[]
   directHireOffers DirectHireOffer[]
   jobs            Job[]
@@ -224,6 +227,7 @@ model BrandProfile {
   avgCreatorRating   Float @default(0)
 
   campaigns         Campaign[]
+  apiKeys          ApiKey[]
   directHireOffers  DirectHireOffer[]
 
   createdAt DateTime @default(now())
@@ -291,6 +295,8 @@ model Campaign {
   @@index([deadline])
   conversations   Conversation[]
   contracts         Contract[]
+  trackingLinks   TrackingLink[]
+  webhookSecret    String?
 }
 
 // ============================================================
@@ -407,6 +413,7 @@ model Job {
   escrowId     String?
   review       Review?
   autoReleaseAt DateTime?
+  trackingLinks   TrackingLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -826,4 +833,167 @@ model PlatformConfig {
   value       String
   description String?
   updatedAt   DateTime @updatedAt
+}
+
+
+// =============================================================
+// TRACKING LINKS
+// =============================================================
+
+model TrackingLink {
+  id              String   @id @default(cuid())
+  shortCode       String   @unique
+  creatorId       String
+  creator         User     @relation("CreatorLinks", fields: [creatorId], references: [id], onDelete: Cascade)
+  campaignId      String
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  jobId           String?
+  job             Job?     @relation(fields: [jobId], references: [id])
+  destinationUrl  String
+  linkType        String   @default("website")
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmContent      String?
+  qrCodeUrl       String?
+  isActive        Boolean  @default(true)
+  totalClicks     Int      @default(0)
+  uniqueClicks    Int      @default(0)
+  expiresAt      DateTime?
+  maxClicks      Int?
+
+  clicks          LinkClick[]
+  conversions     Conversion[]
+  metrics         PerformanceMetric[]
+  variants         LinkVariant[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([creatorId])
+  @@index([campaignId])
+  @@index([shortCode])
+}
+
+model LinkClick {
+  id              String   @id @default(cuid())
+  trackingLinkId  String
+  trackingLink    TrackingLink @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  ipHash          String
+  userAgent       String?
+  country         String?
+  city            String?
+  device          String?
+  os              String?
+  browser         String?
+  referrer        String?
+  timestamp       DateTime @default(now())
+
+  @@index([trackingLinkId])
+  @@index([timestamp])
+}
+
+model Conversion {
+  id              String   @id @default(cuid())
+  trackingLinkId  String
+  trackingLink    TrackingLink @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  type            String
+  value           Float?
+  metadata        Json?
+  timestamp       DateTime @default(now())
+
+  @@index([trackingLinkId])
+}
+
+model PerformanceMetric {
+  id              String   @id @default(cuid())
+  trackingLinkId  String
+  trackingLink    TrackingLink @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  date            DateTime
+  clicks          Int      @default(0)
+  uniqueClicks    Int      @default(0)
+  conversions     Int      @default(0)
+  revenue         Float    @default(0)
+
+  @@unique([trackingLinkId, date])
+  @@index([date])
+}
+
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+// ============================================================
+// A/B LINK VARIANTS (Task 23)
+// ============================================================
+
+model LinkVariant {
+  id              String       @id @default(cuid())
+  trackingLinkId  String
+  trackingLink    TrackingLink @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  label           String       // e.g. "Variant A", "Variant B"
+  destinationUrl  String
+  weight          Int          @default(50)  // traffic split percentage
+  totalClicks     Int          @default(0)
+  uniqueClicks    Int          @default(0)
+  conversions     Int          @default(0)
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([trackingLinkId])
+}
+
+// ============================================================
+// CREATOR PERFORMANCE SCORING (Task 24)
+// ============================================================
+
+model CreatorScore {
+  id                String         @id @default(cuid())
+  creatorId         String         @unique
+  creator           CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  overallScore      Float          @default(0)
+  engagementScore   Float          @default(0)
+  reliabilityScore  Float          @default(0)
+  conversionScore   Float          @default(0)
+  qualityScore      Float          @default(0)
+  tier              String         @default("bronze") // bronze, silver, gold, platinum
+  totalDataPoints   Int            @default(0)
+  lastCalculatedAt  DateTime       @default(now())
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([overallScore])
+  @@index([tier])
+}
+
+// ============================================================
+// BRAND API / EXTERNAL ACCESS (Task 26)
+// ============================================================
+
+model ApiKey {
+  id          String       @id @default(cuid())
+  brandId     String
+  brand       BrandProfile @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  name        String
+  keyHash     String       @unique
+  keyPrefix   String       // first 8 chars for identification
+  scopes      String[]     @default(["read:campaigns", "read:analytics"])
+  isActive    Boolean      @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime     @default(now())
+
+  @@index([brandId])
+  @@index([keyHash])
 }
