@@ -17,7 +17,8 @@
     "db:studio": "prisma studio",
     "test": "NODE_ENV=test jest",
     "test:watch": "NODE_ENV=test jest --watch",
-    "test:coverage": "NODE_ENV=test jest --coverage"
+    "test:coverage": "NODE_ENV=test jest --coverage",
+    "postbuild": "[ -d .next/standalone ] && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/ || true"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.3",
