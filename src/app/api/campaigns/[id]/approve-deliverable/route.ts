@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { nanoid } from "nanoid";
+import { generateAndUploadQrCode } from "@/lib/qr-code";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +68,7 @@ export async function POST(
     const shortCode = nanoid(8);
 
     // Create the tracking link
-    const trackingLink = await db.trackingLink.create({
+    let trackingLink = await db.trackingLink.create({
       data: {
         shortCode,
         creatorId,
@@ -82,6 +83,18 @@ export async function POST(
         uniqueClicks: 0,
       },
     });
+
+    // Generate QR + asset kit (best-effort; non-blocking)
+    try {
+      const trackingUrl = `https://novaclio.io/go/${shortCode}`;
+      const qrCodeUrl = await generateAndUploadQrCode(trackingUrl, shortCode);
+      trackingLink = await db.trackingLink.update({
+        where: { id: trackingLink.id },
+        data: { qrCodeUrl },
+      });
+    } catch (qrErr) {
+      console.error("QR generation failed (non-blocking):", qrErr);
+    }
 
     // Update the deliverable status if the model supports it
     try {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ClickHeatmap from "@/components/tracking/ClickHeatmap";
+import AssetKit from "@/components/AssetKit";
 
 interface TrackingLink {
   id: string;
@@ -15,6 +16,8 @@ interface TrackingLink {
   createdAt: string;
   campaign: { title: string } | null;
   _count: { conversions: number };
+  trackingUrl?: string;
+  qrCodeUrl?: string | null;
   clicks?: Array<{
     id: string;
     country?: string;
@@ -406,6 +409,21 @@ export default function CreatorLinksPageV2() {
                           <p className="text-sm text-white">{link.maxClicks ?? "Unlimited"}</p>
                         </div>
                       </div>
+
+                      <AssetKit
+                        trackingLinkId={link.id}
+                        shortCode={link.shortCode}
+                        trackingUrl={link.trackingUrl ?? `https://novaclio.io/go/${link.shortCode}`}
+                        qrCodeUrl={link.qrCodeUrl ?? null}
+                        campaignTitle={link.campaign?.title}
+                        onQrUpdated={(qrCodeUrl) =>
+                          setLinks((prev) =>
+                            prev.map((l) =>
+                              l.id === link.id ? { ...l, qrCodeUrl } : l
+                            )
+                          )
+                        }
+                      />
 
                       {link.clicks && link.clicks.length > 0 && (
                         <div>
