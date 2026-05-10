@@ -16,6 +16,12 @@ interface ArmyMember {
   user: { email: string };
 }
 
+interface OwedRow {
+  creatorId: string;
+  conversionsThisWeek: number;
+  owedKobo: number;
+}
+
 interface Candidate {
   id: string;
   username: string | null;
@@ -43,10 +49,29 @@ export default function AdminGravyArmyPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [searching, setSearching] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [owedByCreator, setOwedByCreator] = useState<Record<string, OwedRow>>(
+    {}
+  );
 
   useEffect(() => {
     void loadArmy();
+    void loadOwed();
   }, []);
+
+  const loadOwed = async () => {
+    try {
+      const res = await fetch("/api/admin/payouts/owed");
+      if (!res.ok) return;
+      const data = await res.json();
+      const map: Record<string, OwedRow> = {};
+      for (const row of data.rows ?? []) {
+        map[row.creatorId] = row;
+      }
+      setOwedByCreator(map);
+    } catch {
+      // non-fatal
+    }
+  };
 
   useEffect(() => {
     if (!search.trim()) {
@@ -99,6 +124,7 @@ export default function AdminGravyArmyPage() {
         throw new Error(data.error ?? "Failed to update");
       }
       await loadArmy();
+      await loadOwed();
       if (search.trim()) await searchCandidates(search.trim());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update");
@@ -211,6 +237,9 @@ export default function AdminGravyArmyPage() {
                   <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">
                     Rating
                   </th>
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">
+                    Owed this week (₦)
+                  </th>
                   <th className="text-right text-gray-400 text-sm font-medium px-6 py-4">
                     Action
                   </th>
@@ -264,6 +293,20 @@ export default function AdminGravyArmyPage() {
                       </td>
                       <td className="px-6 py-4 text-gray-300">
                         {m.avgRating != null ? m.avgRating.toFixed(1) : "—"}
+                      </td>
+                      <td className="px-6 py-4 text-gray-200">
+                        {(() => {
+                          const owed = owedByCreator[m.id];
+                          if (!owed) return "—";
+                          return (
+                            <span>
+                              ₦{(owed.owedKobo / 100).toLocaleString()}
+                              <span className="text-gray-500 text-xs ml-1">
+                                ({owed.conversionsThisWeek} conv)
+                              </span>
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button
