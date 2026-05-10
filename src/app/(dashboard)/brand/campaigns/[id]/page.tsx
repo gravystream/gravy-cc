@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, BarChart3 } from "lucide-react";
 import WebhookSettings from "@/components/tracking/WebhookSettings";
+import CampaignStatusActions from "@/components/CampaignStatusActions";
 
 interface TrackingLink {
   id: string;
@@ -284,9 +285,7 @@ export default function BrandCampaignDetailPage() {
             <h2 className="text-2xl font-bold text-white">{campaign.title}</h2>
             <p className="text-gray-400 mt-2">Campaign ID: {campaign.id}</p>
           </div>
-          <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(campaign.status)}`}>
-            {campaign.status}
-          </span>
+          <CampaignStatusActions campaignId={campaign.id} status={campaign.status} />
         </div>
         {campaign.budget && (
           <div className="mt-4 flex items-center gap-4">

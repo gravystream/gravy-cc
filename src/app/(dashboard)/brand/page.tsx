@@ -37,7 +37,7 @@ export default async function BrandDashboard() {
             {brand.campaigns.slice(0,5).map(c => (
               <div key={c.id} className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-white font-medium">{c.title}</h3>
+                  <Link href={`/brand/campaigns/${c.id}`} className="hover:text-violet-400 transition"><h3 className="text-white font-medium">{c.title}</h3></Link>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${c.status === "ACTIVE" ? "bg-green-900/30 text-green-400" : "bg-gray-800 text-gray-400"}`}>
                     {c.status}
                   </span>
