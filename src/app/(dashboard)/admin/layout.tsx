@@ -24,6 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/unit-economics", label: "Unit Economics", icon: "" },
     { href: "/admin/events", label: "Events", icon: "" },
     { href: "/admin/experiments", label: "Experiments", icon: "" },
+    { href: "/admin/reports", label: "Weekly Reports", icon: "" },
   ];
 
   return (
