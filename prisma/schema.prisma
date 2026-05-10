@@ -882,11 +882,19 @@ model LinkClick {
   ipHash          String
   userAgent       String?
   country         String?
+  countryCode     String?
   city            String?
+  region          String?
+  latitude        Float?
+  longitude       Float?
   device          String?
+  deviceType      String?
   os              String?
+  osVersion       String?
   browser         String?
+  browserVersion  String?
   referrer        String?
+  isUnique        Boolean? @default(false)
   timestamp       DateTime @default(now())
 
   @@index([trackingLinkId])
