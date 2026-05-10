@@ -41,6 +41,7 @@ interface CreatorROI {
   shortCode: string;
   creator: {
     id: string;
+    creatorProfileId: string | null;
     displayName: string;
     avatarUrl: string | null;
     tier: string;
@@ -52,6 +53,29 @@ interface CreatorROI {
   conversionRate: number;
   cpaKobo: number;
   revenueKobo: number;
+}
+
+type ThresholdType =
+  | "CONVERSIONS"
+  | "CLICKS"
+  | "UNIQUE_CLICKS"
+  | "REVENUE_KOBO";
+
+interface CampaignBonus {
+  id: string;
+  threshold: number;
+  thresholdType: ThresholdType;
+  bonusAmountKobo: number;
+  earnedAt: string | null;
+  paidAt: string | null;
+  paidManually: boolean;
+  notes: string | null;
+  creator: {
+    id: string;
+    displayName: string;
+    username: string;
+    avatarUrl: string | null;
+  };
 }
 
 const TIER_BADGE: Record<string, string> = {
@@ -72,10 +96,81 @@ export default function BrandCampaignDetailPage() {
   const [roi, setRoi] = useState<CreatorROI[]>([]);
   const [roiLoading, setRoiLoading] = useState(true);
 
+  const [bonuses, setBonuses] = useState<CampaignBonus[]>([]);
+  const [bonusesLoading, setBonusesLoading] = useState(true);
+  const [newBonus, setNewBonus] = useState({
+    creatorProfileId: "",
+    thresholdType: "CONVERSIONS" as ThresholdType,
+    threshold: "",
+    bonusAmountNaira: "",
+  });
+  const [creatingBonus, setCreatingBonus] = useState(false);
+  const [bonusError, setBonusError] = useState<string | null>(null);
+
   useEffect(() => {
     fetchCampaignAnalytics();
     fetchPerCreatorRoi();
+    fetchBonuses();
   }, [campaignId]);
+
+  const fetchBonuses = async () => {
+    try {
+      setBonusesLoading(true);
+      const res = await fetch(`/api/brand/campaigns/${campaignId}/bonuses`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setBonuses(data.bonuses ?? []);
+    } finally {
+      setBonusesLoading(false);
+    }
+  };
+
+  const handleCreateBonus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBonusError(null);
+
+    const threshold = parseInt(newBonus.threshold, 10);
+    const naira = parseFloat(newBonus.bonusAmountNaira);
+    if (
+      !newBonus.creatorProfileId ||
+      !Number.isFinite(threshold) ||
+      threshold <= 0 ||
+      !Number.isFinite(naira) ||
+      naira <= 0
+    ) {
+      setBonusError("Pick a creator and enter positive threshold + amount.");
+      return;
+    }
+
+    try {
+      setCreatingBonus(true);
+      const res = await fetch(`/api/brand/campaigns/${campaignId}/bonuses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          creatorId: newBonus.creatorProfileId,
+          threshold,
+          thresholdType: newBonus.thresholdType,
+          bonusAmountKobo: Math.round(naira * 100),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Failed to add bonus");
+      }
+      setNewBonus({
+        creatorProfileId: "",
+        thresholdType: "CONVERSIONS",
+        threshold: "",
+        bonusAmountNaira: "",
+      });
+      await fetchBonuses();
+    } catch (err) {
+      setBonusError(err instanceof Error ? err.message : "Failed to add bonus");
+    } finally {
+      setCreatingBonus(false);
+    }
+  };
 
   const fetchPerCreatorRoi = async () => {
     try {
@@ -476,6 +571,127 @@ export default function BrandCampaignDetailPage() {
                           className={`text-xs px-2 py-0.5 rounded border ${tierClass}`}
                         >
                           {r.creator.tier}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Performance Bonuses */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <div className="p-6 border-b border-gray-800">
+          <h3 className="text-lg font-semibold text-white">Performance bonuses</h3>
+          <p className="text-sm text-gray-400 mt-1">
+            Configure milestone bonuses per creator. Disbursement is manual —
+            see <a href="/brand/bonuses" className="text-blue-400 underline">Bonuses owed</a>.
+          </p>
+        </div>
+
+        <form onSubmit={handleCreateBonus} className="p-6 border-b border-gray-800 grid grid-cols-1 md:grid-cols-5 gap-3">
+          <select
+            value={newBonus.creatorProfileId}
+            onChange={(e) => setNewBonus((s) => ({ ...s, creatorProfileId: e.target.value }))}
+            className="px-3 py-2 bg-black/30 border border-gray-700 rounded-lg text-white text-sm md:col-span-2"
+          >
+            <option value="">Pick a creator…</option>
+            {roi
+              .filter((r) => r.creator.creatorProfileId)
+              .map((r) => (
+                <option key={r.creator.creatorProfileId!} value={r.creator.creatorProfileId!}>
+                  {r.creator.displayName}
+                </option>
+              ))}
+          </select>
+          <select
+            value={newBonus.thresholdType}
+            onChange={(e) =>
+              setNewBonus((s) => ({
+                ...s,
+                thresholdType: e.target.value as ThresholdType,
+              }))
+            }
+            className="px-3 py-2 bg-black/30 border border-gray-700 rounded-lg text-white text-sm"
+          >
+            <option value="CONVERSIONS">Conversions</option>
+            <option value="CLICKS">Clicks</option>
+            <option value="UNIQUE_CLICKS">Unique clicks</option>
+            <option value="REVENUE_KOBO">Revenue (kobo)</option>
+          </select>
+          <input
+            type="number"
+            placeholder="Threshold"
+            min={1}
+            value={newBonus.threshold}
+            onChange={(e) => setNewBonus((s) => ({ ...s, threshold: e.target.value }))}
+            className="px-3 py-2 bg-black/30 border border-gray-700 rounded-lg text-white text-sm"
+          />
+          <input
+            type="number"
+            placeholder="Bonus (₦)"
+            min={1}
+            step={0.01}
+            value={newBonus.bonusAmountNaira}
+            onChange={(e) =>
+              setNewBonus((s) => ({ ...s, bonusAmountNaira: e.target.value }))
+            }
+            className="px-3 py-2 bg-black/30 border border-gray-700 rounded-lg text-white text-sm"
+          />
+          <button
+            type="submit"
+            disabled={creatingBonus}
+            className="md:col-span-5 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded-lg disabled:opacity-50"
+          >
+            {creatingBonus ? "Adding…" : "Add bonus"}
+          </button>
+          {bonusError && (
+            <p className="md:col-span-5 text-red-400 text-sm">{bonusError}</p>
+          )}
+        </form>
+
+        {bonusesLoading ? (
+          <div className="p-8 text-center text-gray-400">Loading…</div>
+        ) : bonuses.length === 0 ? (
+          <div className="p-8 text-center text-gray-400">
+            No bonuses configured for this campaign yet
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-800 bg-gray-900/50">
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">Creator</th>
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">Threshold</th>
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">Bonus (₦)</th>
+                  <th className="text-left text-gray-400 text-sm font-medium px-6 py-4">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bonuses.map((b) => {
+                  const status = b.paidAt
+                    ? { label: "Paid", cls: "bg-green-900/40 text-green-300 border-green-800/40" }
+                    : b.earnedAt
+                    ? { label: "Earned — owed", cls: "bg-yellow-900/40 text-yellow-300 border-yellow-700/40" }
+                    : { label: "Pending", cls: "bg-gray-800/40 text-gray-300 border-gray-700/40" };
+                  return (
+                    <tr
+                      key={b.id}
+                      className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                    >
+                      <td className="px-6 py-4 text-white">{b.creator.displayName}</td>
+                      <td className="px-6 py-4 text-gray-300 text-sm">
+                        {b.threshold.toLocaleString()} {b.thresholdType}
+                      </td>
+                      <td className="px-6 py-4 text-gray-200">
+                        ₦{(b.bonusAmountKobo / 100).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-xs px-2 py-0.5 rounded border ${status.cls}`}>
+                          {status.label}
                         </span>
                       </td>
                     </tr>

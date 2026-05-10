@@ -46,6 +46,7 @@ export async function GET(
             email: true,
             creatorProfile: {
               select: {
+                id: true,
                 displayName: true,
                 avatarUrl: true,
                 tier: true,
@@ -77,6 +78,7 @@ export async function GET(
         shortCode: link.shortCode,
         creator: {
           id: link.creator.id,
+          creatorProfileId: link.creator.creatorProfile?.id ?? null,
           displayName: link.creator.creatorProfile?.displayName ?? "Unknown",
           avatarUrl: link.creator.creatorProfile?.avatarUrl ?? null,
           tier: link.creator.creatorProfile?.tier ?? "BRONZE",

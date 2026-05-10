@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { createHmac, timingSafeEqual } from "crypto";
+import { checkAndFlagBonusesForLink } from "@/lib/bonuses/check-bonuses";
 
 export const dynamic = "force-dynamic";
 
@@ -141,6 +142,13 @@ export async function POST(request: NextRequest) {
       });
     } catch {
       // PerformanceMetric for today may not exist yet — non-critical
+    }
+
+    // Flag any newly-earned performance bonuses (CONVERSIONS / REVENUE_KOBO).
+    try {
+      await checkAndFlagBonusesForLink(trackingLink.id);
+    } catch (bonusErr) {
+      console.error("Bonus check failed:", bonusErr);
     }
 
     return NextResponse.json({

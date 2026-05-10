@@ -13,6 +13,7 @@ const navLinks = [
   { href: "/brand/contracts", label: "Contracts", icon: "📝" },
   { href: "/brand/analytics", label: "Analytics", icon: "📈" },
   { href: "/brand/links", label: "Links & Metrics", icon: "🔗" },
+  { href: "/brand/bonuses", label: "Bonuses Owed", icon: "💰" },
   { href: "/brand/smart-match", label: "Smart Match", icon: "✨" },
   { href: "/brand/api", label: "API Access", icon: "🔑" },
   { href: "/brand/profile", label: "Profile", icon: "👤" },

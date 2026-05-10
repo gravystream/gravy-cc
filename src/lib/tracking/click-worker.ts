@@ -6,6 +6,7 @@ import { lookupGeoIP } from "@/lib/tracking/geoip";
 import { createHash } from "crypto";
 import { emitClickEvent } from "./click-event-emitter";
 import type { ClickJobData } from "./click-queue";
+import { checkAndFlagBonusesForLink } from "@/lib/bonuses/check-bonuses";
 
 const connection = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
   maxRetriesPerRequest: null,
@@ -93,6 +94,19 @@ const clickWorker = new Worker(
         }
       } catch (emitErr) {
         console.error("Failed to emit click event:", emitErr);
+      }
+
+      // Flag any newly-earned performance bonuses (CLICKS / UNIQUE_CLICKS).
+      // Conversion-type bonuses are checked from the conversion webhook.
+      try {
+        const earned = await checkAndFlagBonusesForLink(data.trackingLinkId);
+        if (earned.length > 0) {
+          console.log(
+            `Performance bonuses earned (${earned.length}) for ${data.trackingLinkId}`
+          );
+        }
+      } catch (bonusErr) {
+        console.error("Bonus check failed:", bonusErr);
       }
 
       console.log(`Click processed for ${data.trackingLinkId} (unique: ${isUnique})`);
