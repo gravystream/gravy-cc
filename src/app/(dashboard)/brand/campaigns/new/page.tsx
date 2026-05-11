@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function NewCampaignPage() {
-  const [form, setForm] = useState({ title: "", description: "", budget: "", deadline: "", niche: "", platforms: "", requirements: "" });
+  const [form, setForm] = useState({ title: "", description: "", budget: "", deadline: "", niches: "", platforms: "", requirements: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -19,7 +19,7 @@ export default function NewCampaignPage() {
         ...form,
         budget: parseFloat(form.budget),
         deadline: new Date(form.deadline).toISOString(),
-        niche: form.niche.split(",").map(n => n.trim()),
+        niches: form.niches.split(",").map(n => n.trim()),
         platforms: form.platforms.split(",").map(p => p.trim()),
       }),
     });
@@ -35,7 +35,7 @@ export default function NewCampaignPage() {
       <div className="bg-gray-900 card-hover border border-gray-800 rounded-2xl p-4 md:p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">{error}</div>}
-          {[["title","Campaign Title","text"],["budget","Budget (₦)","number"],["deadline","Deadline","date"],["niche","Niches (comma-separated)","text"],["platforms","Platforms (comma-separated)","text"]].map(([field,label,type]) => (
+          {[["title","Campaign Title","text"],["budget","Budget (₦)","number"],["deadline","Deadline","date"],["niches","Niches (comma-separated)","text"],["platforms","Platforms (comma-separated)","text"]].map(([field,label,type]) => (
             <div key={field}>
               <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
               <input type={type} value={(form as any)[field]} onChange={e => setForm({...form,[field]:e.target.value})}

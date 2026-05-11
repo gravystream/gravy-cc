@@ -176,7 +176,7 @@ async function searchCampaigns(params: {
   }
 
   if (params.niches.length > 0) {
-    conditions.push({ niche: { hasSome: params.niches } });
+    conditions.push({ niches: { hasSome: params.niches } });
   }
   if (params.platforms.length > 0) {
     conditions.push({ platforms: { hasSome: params.platforms } });

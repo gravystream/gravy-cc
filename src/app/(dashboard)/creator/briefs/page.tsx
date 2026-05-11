@@ -25,7 +25,7 @@ export default async function BriefsPage() {
                   <p className="text-gray-400 text-sm mt-1">{c.brand.user.name} · {c.brand.industry}</p>
                   <p className="text-gray-300 text-sm mt-3 line-clamp-2">{c.description}</p>
                   <div className="flex flex-wrap gap-2 mt-3">
-                    {c.niche.map(n => <span key={n} className="bg-violet-900/30 text-violet-400 px-2 py-1 rounded-md text-xs">{n}</span>)}
+                    {c.niches.map(n => <span key={n} className="bg-violet-900/30 text-violet-400 px-2 py-1 rounded-md text-xs">{n}</span>)}
                   </div>
                 </div>
                 <div className="text-right ml-6">

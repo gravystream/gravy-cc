@@ -276,7 +276,7 @@ model Campaign {
   description  String
   requirements String
   deliverables String[]       @default([])
-  niche        String[]       @default([])
+  niches        String[]       @default([]) @map("niche")
   platforms    String[]       @default([])
   type         CampaignType   @default(OPEN)
   status       CampaignStatus @default(DRAFT)
@@ -304,7 +304,7 @@ model Campaign {
   @@index([brandId])
   @@index([status])
   @@index([type])
-  @@index([niche])
+  @@index([niches])
   @@index([deadline])
 }
 

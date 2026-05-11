@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const niche = searchParams.get("niche");
     const campaigns = await db.campaign.findMany({
-      where: { status: "ACTIVE", ...(niche ? { niche: { has: niche } } : {}) },
+      where: { status: "ACTIVE", ...(niche ? { niches: { has: niche } } : {}) },
       include: { brand: { include: { user: { select: { name: true, email: true } } } }, proposals: { select: { id: true } } },
       orderBy: { createdAt: "desc" },
     });
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         description: body.description,
         budgetKobo: Math.round(body.budget * 100),
         deadline: new Date(body.deadline),
-        niche: body.niches || [],
+        niches: body.niches || [],
         platforms: body.platforms || [],
         requirements: body.requirements,
       },

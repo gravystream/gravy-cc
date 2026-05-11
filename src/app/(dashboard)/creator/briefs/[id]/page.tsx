@@ -10,7 +10,7 @@ interface Campaign {
   requirements: string;
   budgetKobo: number;
   deadline: string;
-  niche: string[];
+  niches: string[];
   platforms: string[];
   brand: { user: { name: string }; industry?: string };
   proposals: { id: string }[];
@@ -97,7 +97,7 @@ export default function BriefDetailPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {campaign.niche.map((n) => (
+          {campaign.niches.map((n) => (
             <span key={n} className="bg-violet-900/30 text-violet-400 px-2 py-1 rounded-md text-xs">{n}</span>
           ))}
           {campaign.platforms?.map((p) => (
