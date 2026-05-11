@@ -11,7 +11,7 @@ type Campaign = {
   requirements: string | null;
   budgetKobo: number;
   deadline: string | null;
-  niches: string[];
+  niche: string[];
   platforms: string[];
   status: string;
 };
@@ -45,7 +45,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
         setTitle(campaign.title || "");
         setBudget(String(Math.round((campaign.budgetKobo || 0) / 100)));
         setDeadline(campaign.deadline ? new Date(campaign.deadline).toISOString().slice(0, 10) : "");
-        setNiches((campaign.niches || []).join(", "));
+        setNiches((campaign.niche || []).join(", "));
         setPlatforms((campaign.platforms || []).join(", "));
         setDescription(campaign.description || "");
         setRequirements(campaign.requirements || "");

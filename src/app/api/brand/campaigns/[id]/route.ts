@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     if (typeof body.title === "string" && body.title.trim().length > 0) data.title = body.title.trim();
     if (typeof body.description === "string") data.description = body.description;
     if (typeof body.requirements === "string") data.requirements = body.requirements;
-    if (Array.isArray(body.niches)) data.niches = body.niches.filter((n: unknown) => typeof n === "string");
+    if (Array.isArray(body.niches)) data.niche = body.niches.filter((n: unknown) => typeof n === "string");
     if (Array.isArray(body.platforms)) data.platforms = body.platforms.filter((p: unknown) => typeof p === "string");
     if (body.deadline) {
       const dt = new Date(body.deadline);

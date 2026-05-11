@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         description: body.description,
         budgetKobo: Math.round(body.budget * 100),
         deadline: new Date(body.deadline),
-        niche: body.niche || [],
+        niche: body.niches || [],
         platforms: body.platforms || [],
         requirements: body.requirements,
       },
