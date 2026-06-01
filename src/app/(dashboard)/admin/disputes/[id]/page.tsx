@@ -49,7 +49,7 @@ export default async function DisputeDetailPage({
         </span>
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
+      <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-6 mb-6">
         <h2 className="text-lg font-semibold text-white mb-4">Details</h2>
         <div className="space-y-4">
           <div>
@@ -83,9 +83,9 @@ export default async function DisputeDetailPage({
       </div>
 
       {dispute.campaign && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
+        <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold text-white mb-4">Campaign & Escrow</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid stagger-children grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-gray-400 text-sm mb-1">Campaign</p>
               <p className="text-white">{dispute.campaign.title}</p>
@@ -110,7 +110,7 @@ export default async function DisputeDetailPage({
         </div>
       )}
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <div className="bg-gray-900 card-hover border border-gray-800 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-white mb-4">Take Action</h2>
         <form action={`/api/admin/disputes/${dispute.id}`} method="POST">
           <div className="mb-4">

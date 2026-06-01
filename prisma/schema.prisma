@@ -34,28 +34,30 @@ enum SubscriptionStatus {
 }
 
 model User {
+  pushSubscriptions PushSubscription[]
   // back-relations added for chat
-  id            String    @id @default(cuid())
-  email         String    @unique
-  emailVerified DateTime?
-  name          String?
-  image         String?
-  passwordHash  String?
-  role          UserRole  @default(CREATOR)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                String             @id @default(cuid())
+  email             String             @unique
+  emailVerified     DateTime?
+  name              String?
+  image             String?
+  passwordHash      String?
+  role              UserRole           @default(CREATOR)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
-  accounts     Account[]
-  sessions     Session[]
+  accounts       Account[]
+  sessions       Session[]
   creatorProfile CreatorProfile?
   brandProfile   BrandProfile?
-  notifications Notification[]
-  subscription Subscription?
+  notifications  Notification[]
+  subscription   Subscription?
   resetTokens    PasswordResetToken[]
+  sentMessages   Message[]            @relation(name: "MessageSender")
+  trackingLinks  TrackingLink[]       @relation("CreatorLinks")
 
   @@index([email])
   @@index([role])
-  sentMessages    Message[]  @relation(name: "MessageSender")
 }
 
 model Account {
@@ -96,22 +98,22 @@ model VerificationToken {
 // ============================================================
 
 model Subscription {
-  id                   String             @id @default(cuid())
-  userId               String             @unique
-  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status               SubscriptionStatus @default(TRIAL)
-  plan                 String
-  amount               Int
-  currency             String             @default("NGN")
-  paystackSubscriptionId String?          @unique
-  stripeSubscriptionId String?            @unique
-  currentPeriodStart   DateTime
-  currentPeriodEnd     DateTime
-  trialEnd             DateTime?
-  pausedAt             DateTime?
-  cancelledAt          DateTime?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  id                     String             @id @default(cuid())
+  userId                 String             @unique
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status                 SubscriptionStatus @default(TRIAL)
+  plan                   String
+  amount                 Int
+  currency               String             @default("NGN")
+  paystackSubscriptionId String?            @unique
+  stripeSubscriptionId   String?            @unique
+  currentPeriodStart     DateTime
+  currentPeriodEnd       DateTime
+  trialEnd               DateTime?
+  pausedAt               DateTime?
+  cancelledAt            DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -142,50 +144,59 @@ model CreatorProfile {
   niches      String[] @default([])
   platforms   String[] @default([])
 
-  baseRateKobo  Int     @default(0)
-  currency      String  @default("NGN")
-  availability  CreatorAvailability @default(AVAILABLE)
-  isVerified    Boolean @default(false)
+  baseRateKobo Int                 @default(0)
+  currency     String              @default("NGN")
+  availability CreatorAvailability @default(AVAILABLE)
+  isVerified   Boolean             @default(false)
 
-  totalJobsCompleted  Int     @default(0)
-  totalEarningsKobo   Int     @default(0)
-  avgRating           Float   @default(0)
-  totalReviews        Int     @default(0)
-  responseTimeHours   Float   @default(24)
+  totalJobsCompleted Int   @default(0)
+  totalEarningsKobo  Int   @default(0)
+  avgRating          Float @default(0)
+  totalReviews       Int   @default(0)
+  responseTimeHours  Float @default(24)
 
-  portfolioVideos PortfolioVideo[]
-  proposals       Proposal[]
+  portfolioVideos  PortfolioVideo[]
+  creatorScore     CreatorScore?
+  proposals        Proposal[]
   directHireOffers DirectHireOffer[]
-  jobs            Job[]
-  wallet          Wallet?
+  jobs             Job[]
+  wallet           Wallet?
 
-  tiktokUrl     String?
-  instagramUrl  String?
-  youtubeUrl    String?
-  twitterUrl    String?
+  tiktokUrl    String?
+  instagramUrl String?
+  youtubeUrl   String?
+  twitterUrl   String?
 
   // AI Portfolio Scoring
-  portfolioAiScore    Int?
-  portfolioAiFeedback String?
+  portfolioAiScore     Int?
+  portfolioAiFeedback  String?
   portfolioAiCheckedAt DateTime?
 
-    createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  conversations      Conversation[]
+  contracts          Contract[]           @relation(name: "CreatorContracts")
+  escrowPayments     ContractEscrow[]     @relation(name: "CreatorContractEscrows")
+  videoSubmissions   VideoSubmission[]    @relation(name: "CreatorVideoSubs")
+  shortlists         Shortlist[]
+  // Phase 7: Gravy Internal Layer
+  isGravyArmy        Boolean              @default(false)
+  gravyOnboardedAt   DateTime?
+  tier               CreatorTier          @default(BRONZE)
+  tierUpdatedAt      DateTime             @default(now())
+  tierHistory        CreatorTierHistory[]
+  performanceBonuses PerformanceBonus[]
+  eventAttendances   EventCreator[]
 
   @@index([username])
   @@index([niches])
   @@index([location])
   @@index([avgRating])
   @@index([availability])
-  conversations   Conversation[]
-  contracts         Contract[]    @relation(name: "CreatorContracts")
-  escrowPayments    ContractEscrow[] @relation(name: "CreatorContractEscrows")
-  videoSubmissions  VideoSubmission[] @relation(name: "CreatorVideoSubs")
-  shortlists    Shortlist[]
 }
 
 model PortfolioVideo {
-  id              String  @id @default(cuid())
+  id              String         @id @default(cuid())
   creatorId       String
   creator         CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   title           String
@@ -194,11 +205,11 @@ model PortfolioVideo {
   cloudinaryUrl   String
   thumbnailUrl    String?
   durationSeconds Int?
-  views           Int     @default(0)
-  isFeatured      Boolean @default(false)
-  order           Int     @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  views           Int            @default(0)
+  isFeatured      Boolean        @default(false)
+  order           Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   @@index([creatorId])
 }
@@ -208,34 +219,35 @@ model PortfolioVideo {
 // ============================================================
 
 model BrandProfile {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  companyName  String
-  slug         String   @unique
-  description  String?
-  logoUrl      String?
-  websiteUrl   String?
-  industry     String?
-  location     String?
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName String
+  slug        String  @unique
+  description String?
+  logoUrl     String?
+  websiteUrl  String?
+  industry    String?
+  location    String?
 
-  totalCampaigns     Int @default(0)
-  totalSpentKobo     Int @default(0)
-  avgCreatorRating   Float @default(0)
+  totalCampaigns   Int   @default(0)
+  totalSpentKobo   Int   @default(0)
+  avgCreatorRating Float @default(0)
 
-  campaigns         Campaign[]
-  directHireOffers  DirectHireOffer[]
+  campaigns        Campaign[]
+  apiKeys          ApiKey[]
+  directHireOffers DirectHireOffer[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  conversations  Conversation[]
+  brandWallet    BrandWallet?
+  contracts      Contract[]       @relation(name: "BrandContracts")
+  escrowPayments ContractEscrow[] @relation(name: "BrandContractEscrows")
+  shortlists     Shortlist[]
 
   @@index([slug])
   @@index([industry])
-  conversations   Conversation[]
-  brandWallet       BrandWallet?
-  contracts         Contract[]     @relation(name: "BrandContracts")
-  escrowPayments    ContractEscrow[] @relation(name: "BrandContractEscrows")
-  shortlists    Shortlist[]
 }
 
 // ============================================================
@@ -257,40 +269,43 @@ enum CampaignStatus {
 }
 
 model Campaign {
-  id              String         @id @default(cuid())
-  brandId         String
-  brand           BrandProfile   @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  title           String
-  description     String
-  requirements    String
-  deliverables    String[]       @default([])
-  niche           String[]       @default([])
-  platforms       String[]       @default([])
-  type            CampaignType   @default(OPEN)
-  status          CampaignStatus @default(DRAFT)
+  id           String         @id @default(cuid())
+  brandId      String
+  brand        BrandProfile   @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  requirements String
+  deliverables String[]       @default([])
+  niches        String[]       @default([]) @map("niche")
+  platforms    String[]       @default([])
+  type         CampaignType   @default(OPEN)
+  status       CampaignStatus @default(DRAFT)
 
-  budgetKobo      Int
-  currency        String         @default("NGN")
-  deadline        DateTime
-  revisionCount   Int            @default(1)
+  budgetKobo    Int
+  currency      String   @default("NGN")
+  deadline      DateTime
+  revisionCount Int      @default(1)
 
   escrow          Escrow?
   proposals       Proposal[]
-  viewCount       Int            @default(0)
-  proposalCount   Int            @default(0)
-  qualifiedCount  Int            @default(0)
+  viewCount       Int              @default(0)
+  proposalCount   Int              @default(0)
+  qualifiedCount  Int              @default(0)
   directHireOffer DirectHireOffer?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  conversations      Conversation[]
+  contracts          Contract[]
+  trackingLinks      TrackingLink[]
+  webhookSecret      String?
+  performanceBonuses PerformanceBonus[]
 
   @@index([brandId])
   @@index([status])
   @@index([type])
-  @@index([niche])
+  @@index([niches])
   @@index([deadline])
-  conversations   Conversation[]
-  contracts         Contract[]
 }
 
 // ============================================================
@@ -309,20 +324,20 @@ enum ProposalStatus {
 }
 
 model Proposal {
-  id          String         @id @default(cuid())
-  campaignId  String
-  campaign    Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  creatorId   String
-  creator     CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  status      ProposalStatus @default(SUBMITTED)
+  id         String         @id @default(cuid())
+  campaignId String
+  campaign   Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creatorId  String
+  creator    CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  status     ProposalStatus @default(SUBMITTED)
 
   pitchCloudinaryId  String?
   pitchCloudinaryUrl String?
   pitchThumbnailUrl  String?
   pitchDurationSecs  Int?
 
-  coverLetter     String?
-  proposedBudget  Int?
+  coverLetter      String?
+  proposedBudget   Int?
   proposedTimeline Int?
 
   aiScore          Float?
@@ -356,20 +371,20 @@ enum DirectHireStatus {
 }
 
 model DirectHireOffer {
-  id          String           @id @default(cuid())
-  brandId     String
-  brand       BrandProfile     @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  creatorId   String
-  creator     CreatorProfile   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  campaignId  String?          @unique
-  campaign    Campaign?        @relation(fields: [campaignId], references: [id])
-  status      DirectHireStatus @default(PENDING)
-  message     String?
-  budgetKobo  Int
-  deadline    DateTime
-  expiresAt   DateTime
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id         String           @id @default(cuid())
+  brandId    String
+  brand      BrandProfile     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  creatorId  String
+  creator    CreatorProfile   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  campaignId String?          @unique
+  campaign   Campaign?        @relation(fields: [campaignId], references: [id])
+  status     DirectHireStatus @default(PENDING)
+  message    String?
+  budgetKobo Int
+  deadline   DateTime
+  expiresAt  DateTime
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 
   @@index([brandId])
   @@index([creatorId])
@@ -403,10 +418,11 @@ model Job {
   deadline     DateTime
   revisionLeft Int            @default(1)
 
-  deliverables JobDeliverable[]
-  escrowId     String?
-  review       Review?
+  deliverables  JobDeliverable[]
+  escrowId      String?
+  review        Review?
   autoReleaseAt DateTime?
+  trackingLinks TrackingLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -417,15 +433,15 @@ model Job {
 }
 
 model JobDeliverable {
-  id              String   @id @default(cuid())
+  id              String  @id @default(cuid())
   jobId           String
-  job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  job             Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
   cloudinaryId    String
   cloudinaryUrl   String
   thumbnailUrl    String?
   durationSeconds Int?
   fileSize        Int?
-  isLatest        Boolean  @default(true)
+  isLatest        Boolean @default(true)
 
   aiScore          Float?
   aiVideoScore     Float?
@@ -434,8 +450,8 @@ model JobDeliverable {
   aiFeedback       String?
   aiCheckedAt      DateTime?
 
-  revisionNumber  Int      @default(1)
-  createdAt       DateTime @default(now())
+  revisionNumber Int      @default(1)
+  createdAt      DateTime @default(now())
 
   @@index([jobId])
 }
@@ -454,24 +470,24 @@ enum EscrowStatus {
 }
 
 model Escrow {
-  id             String       @id @default(cuid())
-  campaignId     String       @unique
-  campaign       Campaign     @relation(fields: [campaignId], references: [id])
-  amountKobo     Int
-  currency       String       @default("NGN")
-  status         EscrowStatus @default(PENDING_DEPOSIT)
+  id              String       @id @default(cuid())
+  campaignId      String       @unique
+  campaign        Campaign     @relation(fields: [campaignId], references: [id])
+  amountKobo      Int
+  currency        String       @default("NGN")
+  status          EscrowStatus @default(PENDING_DEPOSIT)
   platformFeeKobo Int
   feePercent      Float        @default(10.0)
 
-  paystackRef    String?      @unique
-  stripeRef      String?      @unique
+  paystackRef String? @unique
+  stripeRef   String? @unique
 
-  releasedAt     DateTime?
-  releasedToId   String?
-  disputeReason  String?
-  disputedAt     DateTime?
-  resolvedAt     DateTime?
-  resolvedBy     String?
+  releasedAt    DateTime?
+  releasedToId  String?
+  disputeReason String?
+  disputedAt    DateTime?
+  resolvedAt    DateTime?
+  resolvedBy    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -492,35 +508,35 @@ enum WalletTransactionType {
 }
 
 model Wallet {
-  id              String         @id @default(cuid())
-  creatorId       String         @unique
-  creator         CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  balanceKobo     Int            @default(0)
-  pendingKobo     Int            @default(0)
-  currency        String         @default("NGN")
+  id          String         @id @default(cuid())
+  creatorId   String         @unique
+  creator     CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  balanceKobo Int            @default(0)
+  pendingKobo Int            @default(0)
+  currency    String         @default("NGN")
 
-  bankName        String?
-  bankCode        String?
-  accountNumber   String?
-  accountName     String?
+  bankName              String?
+  bankCode              String?
+  accountNumber         String?
+  accountName           String?
   paystackRecipientCode String?
 
-  transactions    WalletTransaction[]
+  transactions WalletTransaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model WalletTransaction {
-  id            String                @id @default(cuid())
-  walletId      String
-  wallet        Wallet                @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  type          WalletTransactionType
-  amountKobo    Int
-  description   String
-  reference     String?
-  jobId         String?
-  createdAt     DateTime              @default(now())
+  id          String                @id @default(cuid())
+  walletId    String
+  wallet      Wallet                @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  type        WalletTransactionType
+  amountKobo  Int
+  description String
+  reference   String?
+  jobId       String?
+  createdAt   DateTime              @default(now())
 
   @@index([walletId])
   @@index([type])
@@ -531,18 +547,18 @@ model WalletTransaction {
 // ============================================================
 
 model Review {
-  id          String  @id @default(cuid())
-  jobId       String  @unique
-  job         Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  authorId    String
-  subjectId   String
-  overallRating  Int
-  qualityRating  Int?
+  id                  String   @id @default(cuid())
+  jobId               String   @unique
+  job                 Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  authorId            String
+  subjectId           String
+  overallRating       Int
+  qualityRating       Int?
   communicationRating Int?
-  timelinessRating Int?
-  comment     String?
-  isPublic    Boolean @default(true)
-  createdAt   DateTime @default(now())
+  timelinessRating    Int?
+  comment             String?
+  isPublic            Boolean  @default(true)
+  createdAt           DateTime @default(now())
 
   @@index([subjectId])
   @@index([authorId])
@@ -634,7 +650,7 @@ model Conversation {
   campaign   Campaign?      @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   subject    String?
   messages   Message[]
-  contracts         Contract[]
+  contracts  Contract[]
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
 
@@ -658,7 +674,6 @@ model Message {
   @@index([senderId])
   @@index([isRead])
 }
-
 
 // ============================================================
 // WALLET, CONTRACTS & ESCROW
@@ -696,13 +711,13 @@ enum SubmissionStatus {
 }
 
 model BrandWallet {
-  id           String                  @id @default(cuid())
-  brandId      String                  @unique
-  brand        BrandProfile            @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  balanceKobo  Int                     @default(0)
-  currency     String                  @default("NGN")
-  createdAt    DateTime                @default(now())
-  updatedAt    DateTime                @updatedAt
+  id           String                   @id @default(cuid())
+  brandId      String                   @unique
+  brand        BrandProfile             @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  balanceKobo  Int                      @default(0)
+  currency     String                   @default("NGN")
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
   transactions BrandWalletTransaction[]
 }
 
@@ -723,22 +738,22 @@ model BrandWalletTransaction {
 }
 
 model Contract {
-  id              String         @id @default(cuid())
-  conversationId  String
-  conversation    Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  brandId         String
-  brand           BrandProfile   @relation(name: "BrandContracts", fields: [brandId], references: [id], onDelete: Cascade)
-  creatorId       String
-  creator         CreatorProfile @relation(name: "CreatorContracts", fields: [creatorId], references: [id], onDelete: Cascade)
-  campaignId      String?
-  campaign        Campaign?      @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  id             String         @id @default(cuid())
+  conversationId String
+  conversation   Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  brandId        String
+  brand          BrandProfile   @relation(name: "BrandContracts", fields: [brandId], references: [id], onDelete: Cascade)
+  creatorId      String
+  creator        CreatorProfile @relation(name: "CreatorContracts", fields: [creatorId], references: [id], onDelete: Cascade)
+  campaignId     String?
+  campaign       Campaign?      @relation(fields: [campaignId], references: [id], onDelete: SetNull)
 
   deliverable     String
   platform        String
   deadline        DateTime
   amountKobo      Int
-  currency        String         @default("NGN")
-  revisions       Int            @default(2)
+  currency        String   @default("NGN")
+  revisions       Int      @default(2)
   usageRights     String?
   additionalTerms String?
 
@@ -758,18 +773,18 @@ model Contract {
 }
 
 model ContractEscrow {
-  id          String         @id @default(cuid())
-  contractId  String         @unique
-  contract    Contract       @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  brandId     String
-  brand       BrandProfile   @relation(name: "BrandContractEscrows", fields: [brandId], references: [id])
-  creatorId   String
-  creator     CreatorProfile @relation(name: "CreatorContractEscrows", fields: [creatorId], references: [id])
-  amountKobo  Int
-  currency    String         @default("NGN")
-  status      EscrowStatus   @default(HELD)
-  lockedAt    DateTime       @default(now())
-  releasedAt  DateTime?
+  id         String         @id @default(cuid())
+  contractId String         @unique
+  contract   Contract       @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  brandId    String
+  brand      BrandProfile   @relation(name: "BrandContractEscrows", fields: [brandId], references: [id])
+  creatorId  String
+  creator    CreatorProfile @relation(name: "CreatorContractEscrows", fields: [creatorId], references: [id])
+  amountKobo Int
+  currency   String         @default("NGN")
+  status     EscrowStatus   @default(HELD)
+  lockedAt   DateTime       @default(now())
+  releasedAt DateTime?
 
   @@index([brandId])
   @@index([creatorId])
@@ -826,4 +841,327 @@ model PlatformConfig {
   value       String
   description String?
   updatedAt   DateTime @updatedAt
+}
+
+// =============================================================
+// TRACKING LINKS
+// =============================================================
+
+model TrackingLink {
+  id             String    @id @default(cuid())
+  shortCode      String    @unique
+  creatorId      String
+  creator        User      @relation("CreatorLinks", fields: [creatorId], references: [id], onDelete: Cascade)
+  campaignId     String
+  campaign       Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  jobId          String?
+  job            Job?      @relation(fields: [jobId], references: [id])
+  destinationUrl String
+  linkType       String    @default("website")
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  utmContent     String?
+  qrCodeUrl      String?
+  isActive       Boolean   @default(true)
+  totalClicks    Int       @default(0)
+  uniqueClicks   Int       @default(0)
+  expiresAt      DateTime?
+  maxClicks      Int?
+
+  clicks      LinkClick[]
+  conversions Conversion[]
+  metrics     PerformanceMetric[]
+  variants    LinkVariant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([creatorId])
+  @@index([campaignId])
+  @@index([shortCode])
+}
+
+model LinkClick {
+  id             String       @id @default(cuid())
+  trackingLinkId String
+  trackingLink   TrackingLink @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  ipHash         String
+  userAgent      String?
+  country        String?
+  countryCode    String?
+  city           String?
+  region         String?
+  latitude       Float?
+  longitude      Float?
+  device         String?
+  deviceType     String?
+  os             String?
+  osVersion      String?
+  browser        String?
+  browserVersion String?
+  referrer       String?
+  isUnique       Boolean?     @default(false)
+  timestamp      DateTime     @default(now())
+
+  @@index([trackingLinkId])
+  @@index([timestamp])
+}
+
+model Conversion {
+  id             String       @id @default(cuid())
+  trackingLinkId String
+  trackingLink   TrackingLink @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  type           String
+  value          Float?
+  metadata       Json?
+  timestamp      DateTime     @default(now())
+
+  @@index([trackingLinkId])
+}
+
+model PerformanceMetric {
+  id             String       @id @default(cuid())
+  trackingLinkId String
+  trackingLink   TrackingLink @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  date           DateTime
+  clicks         Int          @default(0)
+  uniqueClicks   Int          @default(0)
+  conversions    Int          @default(0)
+  revenue        Float        @default(0)
+
+  @@unique([trackingLinkId, date])
+  @@index([date])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============================================================
+// A/B LINK VARIANTS (Task 23)
+// ============================================================
+
+model LinkVariant {
+  id             String       @id @default(cuid())
+  trackingLinkId String
+  trackingLink   TrackingLink @relation(fields: [trackingLinkId], references: [id], onDelete: Cascade)
+  label          String // e.g. "Variant A", "Variant B"
+  destinationUrl String
+  weight         Int          @default(50) // traffic split percentage
+  totalClicks    Int          @default(0)
+  uniqueClicks   Int          @default(0)
+  conversions    Int          @default(0)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([trackingLinkId])
+}
+
+// ============================================================
+// CREATOR PERFORMANCE SCORING (Task 24)
+// ============================================================
+
+model CreatorScore {
+  id               String         @id @default(cuid())
+  creatorId        String         @unique
+  creator          CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  overallScore     Float          @default(0)
+  engagementScore  Float          @default(0)
+  reliabilityScore Float          @default(0)
+  conversionScore  Float          @default(0)
+  qualityScore     Float          @default(0)
+  tier             String         @default("bronze") // bronze, silver, gold, platinum
+  totalDataPoints  Int            @default(0)
+  lastCalculatedAt DateTime       @default(now())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([overallScore])
+  @@index([tier])
+}
+
+// ============================================================
+// BRAND API / EXTERNAL ACCESS (Task 26)
+// ============================================================
+
+model ApiKey {
+  id         String       @id @default(cuid())
+  brandId    String
+  brand      BrandProfile @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  name       String
+  keyHash    String       @unique
+  keyPrefix  String // first 8 chars for identification
+  scopes     String[]     @default(["read:campaigns", "read:analytics"])
+  isActive   Boolean      @default(true)
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime     @default(now())
+
+  @@index([brandId])
+  @@index([keyHash])
+}
+
+// ===== Phase 7: Gravy Internal Layer =====
+
+enum CreatorTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum BonusThresholdType {
+  CONVERSIONS
+  CLICKS
+  UNIQUE_CLICKS
+  REVENUE_KOBO
+}
+
+model CreatorTierHistory {
+  id        String         @id @default(cuid())
+  creatorId String
+  creator   CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  fromTier  CreatorTier
+  toTier    CreatorTier
+  reason    String?
+  createdAt DateTime       @default(now())
+
+  @@index([creatorId])
+  @@index([createdAt])
+}
+
+model PerformanceBonus {
+  id              String             @id @default(cuid())
+  campaignId      String
+  campaign        Campaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creatorId       String
+  creator         CreatorProfile     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  threshold       Int
+  thresholdType   BonusThresholdType @default(CONVERSIONS)
+  bonusAmountKobo Int
+  earnedAt        DateTime?
+  paidAt          DateTime?
+  paidManually    Boolean            @default(false)
+  notes           String?
+  createdAt       DateTime           @default(now())
+
+  @@index([campaignId])
+  @@index([creatorId])
+  @@index([earnedAt])
+}
+
+model GravyKPISnapshot {
+  id                  String   @id @default(cuid())
+  date                DateTime @unique
+  totalGravyCreators  Int      @default(0)
+  activeGravyCreators Int      @default(0)
+  totalClicks         Int      @default(0)
+  totalConversions    Int      @default(0)
+  totalRevenueKobo    Int      @default(0)
+  newSignups          Int      @default(0)
+  metadata            Json?
+  createdAt           DateTime @default(now())
+
+  @@index([date])
+}
+
+model EventActivation {
+  id                     String         @id @default(cuid())
+  name                   String
+  location               String
+  date                   DateTime
+  description            String?
+  budgetKobo             Int            @default(0)
+  signupsGenerated       Int            @default(0)
+  clicksGenerated        Int            @default(0)
+  conversionsGenerated   Int            @default(0)
+  costPerAcquisitionKobo Int            @default(0)
+  attendingCreators      EventCreator[]
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  @@index([date])
+}
+
+model EventCreator {
+  id               String          @id @default(cuid())
+  eventId          String
+  event            EventActivation @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  creatorId        String
+  creator          CreatorProfile  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  signupsGenerated Int             @default(0)
+  payoutKobo       Int             @default(0)
+  createdAt        DateTime        @default(now())
+
+  @@unique([eventId, creatorId])
+  @@index([creatorId])
+}
+
+// ===== Phase 6: Growth Intelligence =====
+
+model FlywheelMetric {
+  id                      String   @id @default(cuid())
+  date                    DateTime @unique
+  signups                 Int      @default(0)
+  activations             Int      @default(0)
+  transactions            Int      @default(0)
+  referrals               Int      @default(0)
+  signupToActivation      Float    @default(0)
+  activationToTransaction Float    @default(0)
+  transactionToReferral   Float    @default(0)
+  referralToSignup        Float    @default(0)
+  createdAt               DateTime @default(now())
+
+  @@index([date])
+}
+
+enum ExperimentStatus {
+  DRAFT
+  RUNNING
+  COMPLETED
+  ABANDONED
+}
+
+model Experiment {
+  id          String           @id @default(cuid())
+  name        String
+  hypothesis  String
+  metric      String
+  status      ExperimentStatus @default(DRAFT)
+  startDate   DateTime?
+  endDate     DateTime?
+  sampleSize  Int              @default(0)
+  controlData Json?
+  variantData Json?
+  results     Json?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([status])
+}
+
+model WeeklyReport {
+  id                  String   @id @default(cuid())
+  weekStart           DateTime @unique
+  headline            String
+  metricsJson         Json
+  highlightsJson      Json
+  anomaliesJson       Json
+  recommendationsJson Json
+  generatedBy         String   @default("agent")
+  createdAt           DateTime @default(now())
+
+  @@index([weekStart])
 }

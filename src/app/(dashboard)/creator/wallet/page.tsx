@@ -69,7 +69,7 @@ export default function CreatorWalletPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">My Wallet</h1>
 
       {/* Balance Cards */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
+      <div className="grid stagger-children grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         <div className="bg-gradient-to-br from-[#D4A843] to-[#b8922e] rounded-xl p-6 text-white">
           <p className="text-sm opacity-80 mb-1">Available Balance</p>
           <p className="text-3xl font-bold">{balance.toLocaleString()}</p>
@@ -88,7 +88,7 @@ export default function CreatorWalletPage() {
         <p className="text-sm text-gray-500 mb-4">Add your bank account to receive payouts when brands approve your work.</p>
 
         <form onSubmit={saveBankDetails} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid stagger-children grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
               <input

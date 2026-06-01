@@ -62,7 +62,7 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex">
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-12">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-6 md:p-12">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#D4A843]/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#D4A843]/5 rounded-full blur-[80px] pointer-events-none" />
         <Link href="/" className="relative z-10">

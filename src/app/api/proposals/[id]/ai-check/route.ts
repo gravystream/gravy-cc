@@ -26,7 +26,7 @@ export async function POST(
   const proposal = await db.proposal.findUnique({
     where: { id: id },
     include: {
-      campaign: { select: { description: true, requirements: true, deliverables: true, niche: true } },
+      campaign: { select: { description: true, requirements: true, deliverables: true, niches: true } },
       creator: { select: { niches: true } },
     },
   });

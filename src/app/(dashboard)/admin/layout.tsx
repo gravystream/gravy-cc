@@ -6,7 +6,6 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  
 
   if (!session?.user || !["OWNER","ADMINISTRATOR","TECHNICAL","SUPPORT"].includes((session.user as any).role)) {
     redirect("/admin-login");
@@ -17,6 +16,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/users", label: "Users", icon: "" },
     { href: "/admin/disputes", label: "Disputes", icon: "" },
     { href: "/admin/campaigns", label: "Campaigns", icon: "" },
+    { label: "Analytics", href: "/admin/analytics", icon: "" },
+    { href: "/admin/tracking-links", label: "Tracking Links", icon: "" },
+    { href: "/admin/gravy-army", label: "Gravy Army", icon: "" },
+    { href: "/admin/kpi", label: "KPI Dashboard", icon: "" },
+    { href: "/admin/flywheel", label: "Flywheel", icon: "" },
+    { href: "/admin/unit-economics", label: "Unit Economics", icon: "" },
+    { href: "/admin/events", label: "Events", icon: "" },
+    { href: "/admin/experiments", label: "Experiments", icon: "" },
+    { href: "/admin/reports", label: "Weekly Reports", icon: "" },
   ];
 
   return (
@@ -45,7 +53,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </aside>
       <main className="flex-1 overflow-auto">
-        <div className="p-8">{children}</div>
+        <div className="p-4 md:p-8">{children}</div>
       </main>
     </div>
   );
